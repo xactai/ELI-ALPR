@@ -27,3 +27,6 @@ add_link_options(-fopenmp -s -ldl -lpthread -O3 -lgomp -rdynamic )
 add_executable(ALPR ${SOURCES})
 
 target_link_libraries(ALPR ${EXTRA_LIBS})
+
+
+// sample line added for testing amke and build
