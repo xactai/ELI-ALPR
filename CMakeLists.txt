@@ -29,4 +29,4 @@ add_executable(ALPR ${SOURCES})
 target_link_libraries(ALPR ${EXTRA_LIBS})
 
 
-// sample line added for testing amke and build
+#// sample line added for testing amke and build
