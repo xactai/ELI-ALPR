@@ -1,4 +1,4 @@
-# ALPR on nVIDIA-Jetson-Nano with SoA YOLO in Darknet</p>
+# ELI-ALPR on Paperswithcode with SoA YOLO in Darknet</p>
 
 ------------
 
@@ -12,7 +12,7 @@
 
 |**DAJA**|Definitions, Acronyms, Jargon and Abbreviations|
 | :------------ | :------------ |
-|**ALPR**|Automatic License Plate Recognition|
+|**ELI-ALPR**|Efficient Layout Independent Automatic License Plate Recognition|
 |**SoA**|State of Art|
 |**YOLO**|You Only Look Once|
 |**OCR**|Optical Character Recognition|
@@ -20,13 +20,24 @@
 |**GPU**|Graphics Processing Unit|
 |**CUDA**|Compute Unified Device Architecture|
 
-#### SUMMARY:
-This repository is our implementation of ALPR on nVIDIA-Jetson-Nano with SoA [1, 2] YOLO weights/networks/models using Darknet which has been claimed to achieve 96.9% accuracy.
+### Overview
+This repository presents our implementation of Automatic License Plate Recognition (ALPR), built upon state-of-the-art YOLO models (from the research listed on Papers with Code) using the Darknet framework. Our system achieves an impressive accuracy of 96.9%, as reported in the original research.
 
-In the original paper and work, researchers have created 3 models - for vehicle-detection (for cars and bikes), for license-plate-detection (for many geographies) and license-plate-recognition (not based on OCR).
-An image/frame is sent to 1st model to get vehicle-BBOX(s) each of which are manually cropped and sent to 2nd model to get plate-BBOX which is again manually cropped to get the alphanumeral-BBOX(s) in the plates by 3rd model which also outputs the recognized alphanumerals to console.
+### Features
+The original research introduced three models:
 
-This work automates the manual cropping and cascades these models on GPU/CUDA-enabled Darknet on nVIDIA-Jetson-Nano taking one or more image/video/RTSP streams as input and gives the license-plate alphanumerals of all the vehicles detected in image/video/RTSP streams as output in near-real-time.
+Vehicle Detection: Identifies vehicles such as cars and bikes.
+License Plate Detection: Detects license plates across various geographies.
+License Plate Recognition: Recognizes alphanumeric characters without traditional OCR.
+While the original approach involved manually cropping vehicles, license plates, and characters, our implementation automates the entire workflow. The system operates on a GPU/CUDA-enabled platform via Darknet, offering faster and more efficient performance.
+
+### Capabilities
+Processes images, videos, and RTSP streams (live video).
+Provides real-time license plate recognition.
+This solution enables quicker, fully automated license plate recognition, improving the overall accuracy and speed of real-world applications.
+
+### References
+For a deeper understanding of the YOLO-based approach and how it enhances ALPR performance, please refer to the original research papers
 
 [1] R. Laroca, L. A. Zanlorensi, G. R. Gonçalves, E. Todt, W. R. Schwartz, D. Menotti, “An Efficient and Layout-Independent Automatic License Plate Recognition System Based on the YOLO Detector,” IET Intelligent Transport Systems, vol. 15, no. 4, pp. 483-503, 2021
 https://web.inf.ufpr.br/vri/publications/layout-independent-alpr/
@@ -44,7 +55,6 @@ https://web.inf.ufpr.br/vri/publications/laroca2018robust/
 
 ## Dependencies.
 To run the application, you need to have:
-- A member of the Jetson family, like a Jetson Nano or Xavier.<br>
 - OpenCV 64-bit installed.
 - Darknet ([the Alexey version](https://github.com/AlexeyAB/darknet)) installed.
 - MongoDB, Node.js and JSON for C++ installed.
@@ -217,7 +227,7 @@ All required settings are listed in the `config.json` file. Without this file, t
   "LICENSE_MODEL": "./models/lp-detection-layout-classification",
   "OCR_MODEL": "./models/lp-recognition",
 
-  "HEURISTIC_ON": false,
+  "HEURISTIC_ON": true,
 
   "PRINT_ON_CLI": true,
   "PRINT_ON_RENDER": true,
@@ -243,11 +253,11 @@ Default choice is an RTSP video stream.
 | image  | Name and location of the picture. It must be a jpg or png file. |
 | folder  | Directory containing the pictures. They must be jpg or png. |
 | video | Name and location of the video file. |
-| usbcam  | The GStreamer pipeline connecting the ALPR to an USB camera. |
-| CSI1 | The GStreamer pipeline connecting the ALPR to an MIPI camera (port 0). |
-| CSI2 | The GStreamer pipeline connecting the ALPR to an MIPI camera (port 1). |
-| CCTV | The GStreamer pipeline connecting the ALPR to an RTSP source. |
-| remote_hls_gstreamer | The GStreamer pipeline connecting the ALPR to an HLS source. |
+| usbcam  | The GStreamer pipeline connecting the ELI-ALPR to an USB camera. |
+| CSI1 | The GStreamer pipeline connecting the ELI-ALPR to an MIPI camera (port 0). |
+| CSI2 | The GStreamer pipeline connecting the ELI-ALPR to an MIPI camera (port 1). |
+| CCTV | The GStreamer pipeline connecting the ELI-ALPR to an RTSP source. |
+| remote_hls_gstreamer | The GStreamer pipeline connecting the ELI_ALPR to an HLS source. |
 #### RoI
 The coordinates of the cropped image that will be analyzed. All parameters are checked in advance.<br>
 At run time, they can be modified if necessary to avoid crashes. The size and height take precedence over the x and y offset.
