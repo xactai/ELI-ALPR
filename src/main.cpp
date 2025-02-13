@@ -396,6 +396,9 @@ int main()
                                         if(Js.HeuristicsOn){
                                             SortPlate(result_ocr);
                                         }
+                                        else {
+                                            SortPlate(result_ocr);  // Even when heuristics are off, still call SortPlate
+                                        }    
 
                                         //show
                                         if(Js.PrintOnCli){
