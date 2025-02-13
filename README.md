@@ -283,7 +283,7 @@ Locations where debug images are stored. When the folder name is `none` the stor
 &nbsp;&nbsp;&nbsp;&nbsp;`RENDERS_FOLDER`: Frames shown with boxes around found items.<br><br>
 :point_right:&nbsp;&nbsp;Note that the amount of data stored can be _**huge**_! Within a few minutes, the SD card can be completely written.
 #### HEURISTIC_ON
-When the boolean HEURISTIC_ON is `true`, the characters found are sorted on position and doubles are removed.
+When the boolean HEURISTIC_ON is set to 'true' or 'false', the characters found are sorted by position, and duplicates are removed. This ensures that the correct OCR is printed.
 #### THRESHOLD_
 The threshold appied to the darknet model mentioned
 
