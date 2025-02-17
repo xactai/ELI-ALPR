@@ -49,17 +49,22 @@ void draw_ocr(cv::Mat& bgr, bbox_t& v, bbox_t& p, vector<bbox_t> result_vec, vec
     }
     text[i]=0; //closing (0=endl);
 
-    cv::Size label_size = cv::getTextSize(text, cv::FONT_HERSHEY_SIMPLEX, 0.5, 1, &baseLine);
+    double fontScale = 1.0; // Larger font scale
+    int thickness = 3;      // Thicker text
+    cv::Size label_size = cv::getTextSize(text, cv::FONT_HERSHEY_SIMPLEX, fontScale, thickness, &baseLine);
 
     int x = p.x+v.x+Js.RoiCrop.x;
     int y = p.y+v.y+Js.RoiCrop.y - label_size.height - baseLine;
     if (y < 0) y = 0;
     if (x + label_size.width > bgr.cols)  x = bgr.cols - label_size.width;
 
-    cv::rectangle(bgr, cv::Rect(cv::Point(x, y), cv::Size(label_size.width, label_size.height + baseLine)),
-                      cv::Scalar(255, 255, 255), -1);
+    int padding = 4; // Reduced padding
 
-    cv::putText(bgr, text, cv::Point(x, y + label_size.height), cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0, 0, 0));
+    cv::rectangle(bgr, cv::Rect(cv::Point(x - padding, y - padding),
+                cv::Size(label_size.width + 2 * padding, label_size.height + baseLine + 2 * padding)),
+                cv::Scalar(0, 0, 0), -1);  // Black background
+
+    cv::putText(bgr, text, cv::Point(x, y + label_size.height + padding), cv::FONT_HERSHEY_SIMPLEX, fontScale, cv::Scalar(255, 255, 255), thickness);
 }
 //----------------------------------------------------------------------------------------
 void print_result(vector<bbox_t> const result_vec, vector<string> const obj_names)
