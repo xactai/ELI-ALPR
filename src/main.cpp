@@ -53,14 +53,14 @@ void draw_ocr(cv::Mat& bgr, bbox_t& v, bbox_t& p, vector<bbox_t> result_vec, vec
     int thickness = 3;      // Thicker text
     cv::Size label_size = cv::getTextSize(text, cv::FONT_HERSHEY_SIMPLEX, fontScale, thickness, &baseLine);
 
-    int x = p.x+v.x+Js.RoiCrop.x;
-    int y = p.y+v.y+Js.RoiCrop.y - label_size.height - baseLine;
+    int x = p.x + v.x + Js.RoiCrop.x + (p.w / 2) - (label_size.width / 2);
+    int y = p.y + v.y + Js.RoiCrop.y + p.h + baseLine + 10;
     if (y < 0) y = 0;
     if (x + label_size.width > bgr.cols)  x = bgr.cols - label_size.width;
 
     int padding = 4; // Reduced padding
 
-    cv::rectangle(bgr, cv::Rect(cv::Point(x - padding, y - padding),
+    cv::rectangle(bgr, cv::Rect(cv::Point(x - padding, y + padding),
                 cv::Size(label_size.width + 2 * padding, label_size.height + baseLine + 2 * padding)),
                 cv::Scalar(0, 0, 0), -1);  // Black background
 
