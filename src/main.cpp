@@ -36,35 +36,30 @@ void draw_plate(cv::Mat& bgr, bbox_t& v, bbox_t& p)
     cv::rectangle(bgr, roi, cv::Scalar(0, 255, 0),2); //green - plate
 }
 //----------------------------------------------------------------------------------------
-void draw_ocr(cv::Mat& bgr, bbox_t& v, bbox_t& p, vector<bbox_t> result_vec, vector<string> obj_names)
+void draw_ocr(cv::Mat& bgr, bbox_t& v, bbox_t& p,
+    const std::vector<bbox_t>& result_vec,
+    const std::vector<std::string>& obj_names)
 {
-    char text[32];
-    size_t i;
-    int baseLine = 0;
-
-    if(result_vec.size()==0) return;
-
-    for(i=0;(i<result_vec.size() && i<32);i++){
-        text[i]=obj_names[result_vec[i].obj_id][0];
+    if (result_vec.empty()) return;
+    std::string text;
+    for (size_t i = 0; i < result_vec.size() && i < 32; ++i) {
+        text += obj_names[result_vec[i].obj_id][0];
     }
-    text[i]=0; //closing (0=endl);
+    
+    double fontScale = 1.0;
+    int thickness = 3, baseLine = 0, padding = 7;
 
-    double fontScale = 1.0; // Larger font scale
-    int thickness = 3;      // Thicker text
-    cv::Size label_size = cv::getTextSize(text, cv::FONT_HERSHEY_SIMPLEX, fontScale, thickness, &baseLine);
+    cv::Size textSize = cv::getTextSize(text, cv::FONT_HERSHEY_SIMPLEX, fontScale, thickness, &baseLine);
+    int rectWidth = textSize.width + 2 * padding;
+    int rectHeight = textSize.height + 2 * padding;
+    int plate_center_x = p.x + v.x + Js.RoiCrop.x + (p.w / 2);
+    int rectX = std::clamp(static_cast<int>(plate_center_x - (rectWidth / 2)), 0, bgr.cols - rectWidth);
+    int rectY = std::clamp(static_cast<int>(p.y + v.y + Js.RoiCrop.y + p.h), 0, bgr.rows - rectHeight);
 
-    int x = p.x + v.x + Js.RoiCrop.x + (p.w / 2) - (label_size.width / 2);
-    int y = p.y + v.y + Js.RoiCrop.y + p.h + baseLine + 10;
-    if (y < 0) y = 0;
-    if (x + label_size.width > bgr.cols)  x = bgr.cols - label_size.width;
-
-    int padding = 4; // Reduced padding
-
-    cv::rectangle(bgr, cv::Rect(cv::Point(x - padding, y + padding),
-                cv::Size(label_size.width + 2 * padding, label_size.height + baseLine + 2 * padding)),
-                cv::Scalar(0, 0, 0), -1);  // Black background
-
-    cv::putText(bgr, text, cv::Point(x, y + label_size.height + padding), cv::FONT_HERSHEY_SIMPLEX, fontScale, cv::Scalar(255, 255, 255), thickness);
+    cv::rectangle(bgr, cv::Rect(rectX, rectY, rectWidth, rectHeight), cv::Scalar(0, 0, 0), cv::FILLED);
+    int text_x = rectX + (rectWidth - textSize.width) / 2;
+    int text_y = rectY + (rectHeight + textSize.height - baseLine) / 2 + 4;
+    cv::putText(bgr, text, cv::Point(text_x, text_y), cv::FONT_HERSHEY_SIMPLEX, fontScale, cv::Scalar(255, 255, 255), thickness);
 }
 //----------------------------------------------------------------------------------------
 void print_result(vector<bbox_t> const result_vec, vector<string> const obj_names)
