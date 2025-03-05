@@ -8,6 +8,7 @@
 
 #include "dirent.h"
 #include <opencv2/opencv.hpp>
+#include <chrono>
 
 class RTSPcam
 {
@@ -31,6 +32,7 @@ protected:
     cv::VideoCapture* cap;
     bool FirstPic;
     size_t FrameCnt;
+    std::chrono::steady_clock::time_point fpsPrintTime; 
     std::string MyFile;
 private:
     DIR *dir;
@@ -39,10 +41,6 @@ private:
     void ProcessOpen(void);
     void NiceString(const size_t Cnt);
     void NiceString(const std::string Str);
-    std::chrono::steady_clock::time_point Tgrab;
-    std::chrono::steady_clock::time_point lastFpsTime;
-    std::chrono::steady_clock::time_point startTime;
-    float real_fps;    
-    int frameCount;                        
+    std::chrono::steady_clock::time_point Tgrab;                       
 };
 #endif // RTSPCAM_H

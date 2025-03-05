@@ -4,24 +4,22 @@
 //
 //----------------------------------------------------------------------------------------
 #include "RTSPcam.h"
+#include <chrono>
 #include <sys/stat.h>
 #include <iostream>
 #include <string>
-#include <iomanip>
 
 #define DUMMY 35
 #define COUNT 35
 
 using namespace std;
 //----------------------------------------------------------------------------------------
-RTSPcam::RTSPcam(void): cap(NULL), FirstPic(true), FrameCnt(0), frameCount(0), real_fps(0.0)
+RTSPcam::RTSPcam(void): cap(NULL), FirstPic(true), FrameCnt(0)
 {
     cap = new cv::VideoCapture;
     UsePicture = false;
     UseFolder  = false;                 // true when a only folder name is loaded.
     CurrentFileName = "";
-    lastFpsTime = chrono::steady_clock::now();
-    startTime = std::chrono::steady_clock::now();    // Set the start time of the video
 }
 //----------------------------------------------------------------------------------------
 RTSPcam::~RTSPcam()
@@ -113,7 +111,7 @@ void RTSPcam::ProcessOpen(void)
         if(FrameTime<19.0) FrameTime=19.0;      //limit to 52.631 FPS max
         FPS=1000.0/FrameTime;
     }
-
+    fpsPrintTime = std::chrono::steady_clock::now();
     cout << "FPS : " << FPS << endl;
 }
 //----------------------------------------------------------------------------------------
@@ -177,29 +175,27 @@ bool RTSPcam::GetLatestFrame(cv::Mat& frame)
     }
     Success = cap->read(frame);
     Tgrab   = chrono::steady_clock::now();
-    chrono::steady_clock::time_point current_time = chrono::steady_clock::now();
-    chrono::duration<float> elapsed_time_since_start = current_time - startTime;
-
-    if (elapsed_time_since_start.count() >= 1.0f) {
-        real_fps = frameCount / elapsed_time_since_start.count();
-        startTime = current_time;
-        frameCount = 0;
-    } 
-    frameCount++; // Increment frame count for every frame
-
-    // Display FPS on the video frame
-    std::stringstream fpsText;
-    fpsText << "FPS: " << std::fixed << std::setprecision(2) << real_fps;
-
-    int baseline = 0;
-    cv::Size textSize = cv::getTextSize(fpsText.str(), cv::FONT_HERSHEY_SIMPLEX, 0.5, 1, &baseline);
-    int centerX = (frame.cols - textSize.width) / 2;
-    int centerY = textSize.height + 10;
-    cv::putText(frame, fpsText.str(), cv::Point(centerX, centerY), cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(20, 0, 255), 2);
 
     FirstPic= false;
     FrameCnt++;
     NiceString(FrameCnt);
+
+    auto now = std::chrono::steady_clock::now();
+    if (std::chrono::duration_cast<std::chrono::seconds>(now - fpsPrintTime).count() >= 5) {
+    double actualFPS = 1000.0 / Elapse;
+    std::cout << "\r Actual FPS: " << std::fixed << std::setprecision(2) << actualFPS << std::flush;
+    fpsPrintTime = now;
+    }
+
+    // Display actual FPS on top of the video frame
+    std::ostringstream fpsStream;
+    fpsStream << "FPS: " << std::fixed << std::setprecision(2) << (1000.0 / Elapse);
+    std::string actual_fps_text = fpsStream.str();
+
+    // Overlay the actual FPS on the frame
+    cv::putText(frame, actual_fps_text, 
+    cv::Point((frame.cols - cv::getTextSize(actual_fps_text, cv::FONT_HERSHEY_SIMPLEX, 1.0, 2, nullptr).width) / 2, 30), 
+    cv::FONT_HERSHEY_SIMPLEX, 1.0, cv::Scalar(255, 255, 255), 2);
 
     return Success;
 }
