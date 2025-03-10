@@ -212,7 +212,7 @@ All required settings are listed in the `config.json` file. Without this file, t
     "remote_hls_gstreamer": "souphttpsrc location=http://YOUR_HLSSTREAM_URL_HERE.m3u8 ! hlsdemux ! decodebin ! videoconvert ! videoscale ! appsink"
   },
 
-  "RoI": {
+  "WoI": {
     "x_offset": 220,
     "y_offset": 500,
     "width": 640,
@@ -258,7 +258,7 @@ Default choice is an RTSP video stream.
 | CSI2 | The GStreamer pipeline connecting the ELI-ALPR to an MIPI camera (port 1). |
 | CCTV | The GStreamer pipeline connecting the ELI-ALPR to an RTSP source. |
 | remote_hls_gstreamer | The GStreamer pipeline connecting the ELI_ALPR to an HLS source. |
-#### RoI
+#### WoI
 The coordinates of the cropped image that will be analyzed. All parameters are checked in advance.<br>
 At run time, they can be modified if necessary to avoid crashes. The size and height take precedence over the x and y offset.
 #### MJPEG_PORT

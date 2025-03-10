@@ -10,16 +10,16 @@
     "CCTV": "rtsp://admins:123456@192.168.30.131:554/stream1"
   },
 
-  "RoI": {
-    "x_offset": 0,
-    "y_offset": 0,
-    "width": 2280,
+  "WoI": {
+    "x_offset": 1920,
+    "y_offset": 1080,
+    "width": 1920,
     "height": 1080
   },
 
   "MJPEG_PORT": 8090,
-  "MJPEG_WIDTH": 320,
-  "MJPEG_HEIGHT": 240,
+  "MJPEG_WIDTH": 1920,
+  "MJPEG_HEIGHT": 1080,
 
   "VEHICLE_MODEL": "./models/vehicle-detection",
   "LICENSE_MODEL": "./models/lp-detection-layout-classification",
@@ -37,6 +37,6 @@
   "RENDERS_FOLDER": "none",
 
   "THRESHOLD_VEHICLE": 0.01,
-  "THRESHOLD_PLATE": 0.01,
+  "THRESHOLD_PLATE": 0.5,
   "THRESHOLD_OCR": 0.5
 }
