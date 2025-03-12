@@ -53,7 +53,7 @@ public:
     int MJPEG_Port;           //output stream (0 = no stream, usually 8090)
     int MJPEG_Width;          //output image width 8090 stream
     int MJPEG_Height;         //output image height 8090 stream
-    cv::Rect WoiCrop;         //cropped woi (width==0 and/or height==0 no cropping)
+    cv::Rect RoiCrop;         //cropped roi (width==0 and/or height==0 no cropping)
 
 private:
     json j;

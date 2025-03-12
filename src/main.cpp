@@ -24,16 +24,16 @@ Tjson Js;
 void draw_vehicle(cv::Mat& bgr, bbox_t& v)
 {
     //Create the rectangle
-    cv::Rect woi(v.x+Js.WoiCrop.x, v.y+Js.WoiCrop.y, v.w, v.h);
-    if(v.obj_id == 0) cv::rectangle(bgr, woi, cv::Scalar(255, 255,   0),2); //cyan - car
-    else              cv::rectangle(bgr, woi, cv::Scalar(255,   0, 255),2); //magenta - motorcycle
+    cv::Rect roi(v.x+Js.RoiCrop.x, v.y+Js.RoiCrop.y, v.w, v.h);
+    if(v.obj_id == 0) cv::rectangle(bgr, roi, cv::Scalar(255, 255,   0),2); //cyan - car
+    else              cv::rectangle(bgr, roi, cv::Scalar(255,   0, 255),2); //magenta - motorcycle
 }
 //----------------------------------------------------------------------------------------
 void draw_plate(cv::Mat& bgr, bbox_t& v, bbox_t& p)
 {
     //Create the rectangle
-    cv::Rect woi(p.x+v.x+Js.WoiCrop.x, p.y+v.y+Js.WoiCrop.y, p.w, p.h);
-    cv::rectangle(bgr, woi, cv::Scalar(0, 255, 0),2); //green - plate
+    cv::Rect roi(p.x+v.x+Js.RoiCrop.x, p.y+v.y+Js.RoiCrop.y, p.w, p.h);
+    cv::rectangle(bgr, roi, cv::Scalar(0, 255, 0),2); //green - plate
 }
 //----------------------------------------------------------------------------------------
 void draw_ocr(cv::Mat& bgr, bbox_t& v, bbox_t& p,
@@ -52,9 +52,9 @@ void draw_ocr(cv::Mat& bgr, bbox_t& v, bbox_t& p,
     cv::Size textSize = cv::getTextSize(text, cv::FONT_HERSHEY_SIMPLEX, fontScale, thickness, &baseLine);
     int rectWidth = textSize.width + 2 * padding;
     int rectHeight = textSize.height + 2 * padding;
-    int plate_center_x = p.x + v.x + Js.WoiCrop.x + (p.w / 2);
+    int plate_center_x = p.x + v.x + Js.RoiCrop.x + (p.w / 2);
     int rectX = std::clamp(static_cast<int>(plate_center_x - (rectWidth / 2)), 0, bgr.cols - rectWidth);
-    int rectY = std::clamp(static_cast<int>(p.y + v.y + Js.WoiCrop.y + p.h), 0, bgr.rows - rectHeight);
+    int rectY = std::clamp(static_cast<int>(p.y + v.y + Js.RoiCrop.y + p.h), 0, bgr.rows - rectHeight);
 
     cv::rectangle(bgr, cv::Rect(rectX, rectY, rectWidth, rectHeight), cv::Scalar(0, 0, 0), cv::FILLED);
     int text_x = rectX + (rectWidth - textSize.width) / 2;
@@ -260,32 +260,32 @@ bool send_json_http(vector<bbox_t> cur_bbox_vec, vector<string> obj_names, strin
     return true;
 }
 //----------------------------------------------------------------------------------------
-void CropMat(cv::Mat& In, cv::Mat& Out) //checks the WoI parameters on forehand
+void CropMat(cv::Mat& In, cv::Mat& Out) //checks the RoI parameters on forehand
 {
     cv::Rect R;
 
-    if(Js.WoiCrop.width  <= In.cols) R.width  = Js.WoiCrop.width;
+    if(Js.RoiCrop.width  <= In.cols) R.width  = Js.RoiCrop.width;
     else                             R.width  = In.cols;
 
-    if(Js.WoiCrop.height <= In.rows) R.height = Js.WoiCrop.height;
+    if(Js.RoiCrop.height <= In.rows) R.height = Js.RoiCrop.height;
     else                             R.height = In.rows;
 
-    if(Js.WoiCrop.x < 0 ) R.x=0;
+    if(Js.RoiCrop.x < 0 ) R.x=0;
     else{
-        if((Js.WoiCrop.x+R.width) <= In.cols) R.x=Js.WoiCrop.x;
+        if((Js.RoiCrop.x+R.width) <= In.cols) R.x=Js.RoiCrop.x;
         else                                  R.x=In.cols-R.width;
     }
 
-    if(Js.WoiCrop.y < 0 ) R.y=0;
+    if(Js.RoiCrop.y < 0 ) R.y=0;
     else{
-        if((Js.WoiCrop.y+R.height) <= In.rows) R.y=Js.WoiCrop.y;
+        if((Js.RoiCrop.y+R.height) <= In.rows) R.y=Js.RoiCrop.y;
         else                                   R.y=In.rows-R.height;
     }
 
     Out = In(R);
-    //important update the Js.WoiCrop as it is used as offset in the remaining code.
+    //important update the Js.roiCrop as it is used as offset in the remaining code.
     //in fact you may overrule the config.json here.
-    Js.WoiCrop = R;
+    Js.RoiCrop = R;
 }
 //----------------------------------------------------------------------------------------
 int main()
@@ -342,7 +342,7 @@ int main()
                     frame_full_render = frame_full.clone();
                     CropMat(frame_full,frame);
                     //draw crop borders
-                    cv::rectangle(frame_full_render, Js.WoiCrop, cv::Scalar(128, 128, 128),2);
+                    cv::rectangle(frame_full_render, Js.RoiCrop, cv::Scalar(128, 128, 128),2);
 
                     //detect the cars
                     vector<bbox_t> result_car = CarNet.detect(frame,Js.ThresCar);
@@ -355,9 +355,9 @@ int main()
                         //Create the rectangle
                         if((i.w > 40) && (i.h > 40) &&    //get some width and height (40x40)
                            ((i.x + i.w) < Wd) && ((i.y + i.h) < Ht)){
-                                cv::Rect woi(i.x, i.y, i.w, i.h);
-                                //Create the WOI
-                                cv::Mat frame_car = frame(woi);
+                                cv::Rect roi(i.x, i.y, i.w, i.h);
+                                //Create the ROI
+                                cv::Mat frame_car = frame(roi);
 
                                 //draw borders around cars/motorbikes
                                 draw_vehicle(frame_full_render, i);
@@ -377,9 +377,9 @@ int main()
                                     WdC = frame_car.cols;  HtC = frame_car.rows;
                                     if((j.w > 20) && (j.h > 10) &&    //get some width and height (20x10)
                                        ((j.x + 2 + j.w) < WdC) && ((j.y + 2 + j.h) < HtC)){
-                                        cv::Rect woi(j.x, j.y, j.w+2, j.h+2);
-                                        //Create the WOI
-                                        cv::Mat frame_plate = frame_car(woi);
+                                        cv::Rect roi(j.x, j.y, j.w+2, j.h+2);
+                                        //Create the ROI
+                                        cv::Mat frame_plate = frame_car(roi);
 
                                         //draw borders around plates
                                         draw_plate(frame_full_render, i, j);

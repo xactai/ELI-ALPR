@@ -10,7 +10,7 @@
     "CCTV": "rtsp://admins:123456@192.168.30.131:554/stream1"
   },
 
-  "WoI": {
+  "RoI": {
     "x_offset": 1920,
     "y_offset": 1080,
     "width": 1920,

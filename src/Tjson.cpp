@@ -72,10 +72,10 @@ bool Tjson::GetSettings(void)
         if(!GetSetting(j,"MJPEG_HEIGHT",MJPEG_Height))     return Success;
 
         //crop sizes
-        if(!GetSetting(j["WoI"],"x_offset",WoiCrop.x))     return Success;
-        if(!GetSetting(j["WoI"],"y_offset",WoiCrop.y))     return Success;
-        if(!GetSetting(j["WoI"],"width",WoiCrop.width))    return Success;
-        if(!GetSetting(j["WoI"],"height",WoiCrop.height))  return Success;
+        if(!GetSetting(j["RoI"],"x_offset",RoiCrop.x))     return Success;
+        if(!GetSetting(j["RoI"],"y_offset",RoiCrop.y))     return Success;
+        if(!GetSetting(j["RoI"],"width",RoiCrop.width))    return Success;
+        if(!GetSetting(j["RoI"],"height",RoiCrop.height))  return Success;
 
         //so far, so good
         Success=true;
