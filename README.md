@@ -265,7 +265,7 @@ At run time, they can be modified if necessary to avoid crashes. The size and he
 #### MJPEG_PORT
 The port number of the local host to which the video is streamed.
 #### JSON_PORT
-The port number on the local host used for streaming the detection JSON data.
+The port number on the local host used for transmitting the detection JSON data.
 
 #### MJPEG_WIDTH MJPEG_HEIGHT
 The image size send to the local host.
