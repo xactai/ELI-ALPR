@@ -51,6 +51,7 @@ public:
     std::string Json_Folder;  //directory with json outputs
     std::string Render_Folder; //directory with ocr results
     int MJPEG_Port;           //output stream (0 = no stream, usually 8090)
+    int JSON_Port;            //output stream (detection data 8070)
     int MJPEG_Width;          //output image width 8090 stream
     int MJPEG_Height;         //output image height 8090 stream
     cv::Rect RoiCrop;         //cropped roi (width==0 and/or height==0 no cropping)

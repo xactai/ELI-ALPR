@@ -218,40 +218,48 @@ void send_mjpeg(cv::Mat& mat, int port, int timeout, int quality)
 bool send_json_http(vector<bbox_t> cur_bbox_vec, vector<string> obj_names, string frame_id,
                     string filename = string(), int timeout = 400000, int port = 8070){
     string send_str;
-    if (cur_bbox_vec.empty()) return false;  // Early return if no bounding boxes are detected
+
     char *tmp_buf = (char *)calloc(1024, sizeof(char));
-    if (!filename.empty()) {
-        sprintf(tmp_buf, "{\n \"frame_id\":%s, \n \"filename\":\"%s\", \n \"objects\": [ \n", frame_id.c_str(), filename.c_str());
-    }
-    else {
-        sprintf(tmp_buf, "{\n \"frame_id\":%s, \n \"objects\": [ \n", frame_id.c_str());
-    }
+    sprintf(tmp_buf, "{\n \"frame_id\":%s, \n \"objects\": [\n", frame_id.c_str());
     send_str = tmp_buf;
     free(tmp_buf);
 
-    for (auto & i : cur_bbox_vec) {
+    for (size_t idx = 0; idx < cur_bbox_vec.size(); idx++) {
+        auto &i = cur_bbox_vec[idx];
         char *buf = (char *)calloc(2048, sizeof(char));
 
-        sprintf(buf, "  {\"class_id\":%d, \"name\":\"%s\", \"absolute_coordinates\":{\"center_x\":%d, \"center_y\":%d, \"width\":%d, \"height\":%d}, \"confidence\":%f",
-            i.obj_id, obj_names[i.obj_id].c_str(), i.x, i.y, i.w, i.h, i.prob);
+        // Iterate over each bounding box to form JSON objects
+    for (size_t idx = 0; idx < cur_bbox_vec.size(); idx++) {
+        auto &i = cur_bbox_vec[idx];
+        char *buf = (char *)calloc(2048, sizeof(char));
+
+        // Calculate relative coordinates
+        float rel_center_x = (i.x + (i.w / 2.0)) / (float)Js.RoiCrop.width;
+        float rel_center_y = (i.y + (i.h / 2.0)) / (float)Js.RoiCrop.height;
+        float rel_width = i.w / (float)Js.RoiCrop.width;
+        float rel_height = i.h / (float)Js.RoiCrop.height;
+
+
+        sprintf(buf, 
+            "  {\"class_id\":%d, \"name\":\"%s\", "
+            "\"relative_coordinates\":{\"center_x\":%.6f, \"center_y\":%.6f, \"width\":%.6f, \"height\":%.6f}, \"confidence\":%.6f}",
+            i.obj_id, obj_names[i.obj_id].c_str(),
+            rel_center_x, rel_center_y, rel_width, rel_height, i.prob);
 
         send_str += buf;
 
-        if (!isnan(i.z_3d)) {
-            sprintf(buf, "\n    , \"coordinates_in_meters\":{\"x_3d\":%.2f, \"y_3d\":%.2f, \"z_3d\":%.2f}",
-                i.x_3d, i.y_3d, i.z_3d);
-            send_str += buf;
-        }
-
-        send_str += "}\n";
-
+        if (idx != cur_bbox_vec.size() - 1) {
+            send_str += ",\n";
+        } else {
+        send_str += "\n";
+    }
         free(buf);
     }
 
-    send_str += "\n ] \n}";
+    send_str += " ]\n}";
 
     if(Js.Json_Folder!="none"){
-        ofstream Jfile(Js.Json_Folder+"/"+frame_id);
+        ofstream Jfile(Js.Json_Folder + "/" + frame_id + ".json");
         Jfile << send_str;
         Jfile.close();
     }
@@ -415,9 +423,15 @@ int main()
                             cv::imwrite( Js.Render_Folder+"/"+cam.CurrentFileName+"_utc.png", frame_full_render);
                         }
                     }
-
+                                        
+                    int frame_id = -1;
+                   try {
+                       frame_id = std::stoi(cam.CurrentFileName);  
+                   } catch (const std::exception& e) {
+                       cerr << "Error in stoi conversion: " << e.what() << endl;
+                   }
                     //send json into the world (port 8070)
-                    send_json_http(result_ocr, OcrNames, cam.CurrentFileName+"_"+ChrCar+"_"+ChrPlate+"_utc.json");
+                    send_json_http(result_car, CarNames, std::to_string(frame_id), cam.CurrentFileName + "_" + ChrCar + "_" + ChrPlate + "_utc.json");
 
                     //send the frame to port 8090
                     if(Js.MJPEG_Port > 0){

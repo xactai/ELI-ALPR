@@ -18,6 +18,7 @@
   },
 
   "MJPEG_PORT": 8090,
+  "JSON_PORT": 8070,
   "MJPEG_WIDTH": 1920,
   "MJPEG_HEIGHT": 1080,
 
@@ -36,7 +37,7 @@
   "JSONS_FOLDER": "./outputs/jsons",
   "RENDERS_FOLDER": "none",
 
-  "THRESHOLD_VEHICLE": 0.01,
+  "THRESHOLD_VEHICLE": 0.5,
   "THRESHOLD_PLATE": 0.5,
   "THRESHOLD_OCR": 0.5
 }

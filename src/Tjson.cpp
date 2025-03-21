@@ -7,8 +7,8 @@
 #include <iostream>
 #include <fstream>
 //----------------------------------------------------------------------------------------
-Tjson::Tjson(): MJPEG_Port(0)
-{
+Tjson::Tjson(): MJPEG_Port(0),, JSON_Port(0) {
+
     Jvalid=false;
 }
 //----------------------------------------------------------------------------------------
@@ -68,6 +68,7 @@ bool Tjson::GetSettings(void)
         if(!GetSetting(j,"JSONS_FOLDER",Json_Folder))      return Success;
         if(!GetSetting(j,"RENDERS_FOLDER",Render_Folder))  return Success;
         if(!GetSetting(j,"MJPEG_PORT",MJPEG_Port))         return Success;
+        if(!GetSetting(j,"JSON_PORT",JSON_Port))           return Success;
         if(!GetSetting(j,"MJPEG_WIDTH",MJPEG_Width))       return Success;
         if(!GetSetting(j,"MJPEG_HEIGHT",MJPEG_Height))     return Success;
 
