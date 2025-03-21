@@ -202,32 +202,33 @@ All required settings are listed in the `config.json` file. Without this file, t
   "VERSION": "1.0.0",
   "VIDEO_INPUT": "video",
   "VIDEO_INPUTS_PARAMS": {
-    "image": "/home/xactai/Pictures/academic-sample-image.jpg",
-    "folder": "/home/xactai/Pictures/Academic+NovotelOUT-Images",
-    "video": "/home/xactai/Videos/Novotel_Entry_22-mins_H264.mp4",
+    "image": "./images/car.jpg",
+    "folder": "./inputs/images",
+    "video": "./images/demo.mp4",
     "usbcam": "v4l2src device=/dev/video0 ! video/x-raw, framerate=30/1, width=640, height=360 ! videoconvert ! appsink",
     "CSI1": "nvarguscamerasrc sensor_id=0 ! video/x-raw(memory:NVMM),width=640, height=480, framerate=15/1, format=NV12 ! nvvidconv ! video/x-raw, format=BGRx, width=640, height=480 ! videoconvert ! video/x-raw, format=BGR ! appsink",
     "CSI2": "nvarguscamerasrc sensor_id=1 ! video/x-raw(memory:NVMM),width=640, height=480, framerate=15/1, format=NV12 ! nvvidconv ! video/x-raw, format=BGRx, width=640, height=480 ! videoconvert ! video/x-raw, format=BGR ! appsink",
-    "CCTV": "rtsp://admin:Admin@12345@192.168.30.171/cam/realmonitor?channel=1&subtype=0",
+    "CCTV": "rtsp://192.168.178.129:8554/test/",
     "remote_hls_gstreamer": "souphttpsrc location=http://YOUR_HLSSTREAM_URL_HERE.m3u8 ! hlsdemux ! decodebin ! videoconvert ! videoscale ! appsink"
   },
 
   "RoI": {
     "x_offset": 220,
     "y_offset": 500,
-    "width": 640,
-    "height": 480
+    "width": 1920,
+    "height": 1080
   },
 
   "MJPEG_PORT": 8090,
-  "MJPEG_WIDTH": 320,
-  "MJPEG_HEIGHT": 240,
+  "JSON_PORT": 8070,
+  "MJPEG_WIDTH": 1920,
+  "MJPEG_HEIGHT": 1080,
 
   "VEHICLE_MODEL": "./models/vehicle-detection",
   "LICENSE_MODEL": "./models/lp-detection-layout-classification",
   "OCR_MODEL": "./models/lp-recognition",
 
-  "HEURISTIC_ON": true,
+  "HEURISTIC_ON": false,
 
   "PRINT_ON_CLI": true,
   "PRINT_ON_RENDER": true,
@@ -263,6 +264,9 @@ The coordinates of the cropped image that will be analyzed. All parameters are c
 At run time, they can be modified if necessary to avoid crashes. The size and height take precedence over the x and y offset.
 #### MJPEG_PORT
 The port number of the local host to which the video is streamed.
+#### JSON_PORT
+The port number on the local host used for streaming the detection JSON data.
+
 #### MJPEG_WIDTH MJPEG_HEIGHT
 The image size send to the local host.
 #### _MODEL
