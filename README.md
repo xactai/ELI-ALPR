@@ -178,7 +178,8 @@ The threshold appied to the darknet model mentioned.
 
 - The output image highlights ELI-ALPR's performance, showcasing its ability to detect and recognize cars, bikes, and their license plates. Each plate is accurately identified, with bounding boxes drawn around the plates, and the recognized plate number displayed above the corresponding vehicle. This demonstrates the system’s effectiveness in both vehicle and license plate detection.
 
-<video controls src="outputs/Images/ELI-ALPR_Academic_Image_output.webm" title="IMAGE-OUTPUT"></video>
+[ELI-ALPR_Academic_Image_output.webm](https://github.com/user-attachments/assets/e2f5cc77-7a99-4fde-b8a7-d9826a0effdc)
+
 
 ### **References**
 
