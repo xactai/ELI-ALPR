@@ -174,6 +174,12 @@ The threshold appied to the darknet model mentioned.
 ------------
 
 
+### **ELI-ALPR Image Output**
+
+- The output image highlights ELI-ALPR's performance, showcasing its ability to detect and recognize cars, bikes, and their license plates. Each plate is accurately identified, with bounding boxes drawn around the plates, and the recognized plate number displayed above the corresponding vehicle. This demonstrates the system’s effectiveness in both vehicle and license plate detection.
+
+<video controls src="outputs/Images/ELI-ALPR_Academic_Image_output.webm" title="IMAGE-OUTPUT"></video>
+
 ### **References**
 
 For a deeper understanding of the YOLO-based approach and how it enhances ALPR performance, please refer to the original research papers
