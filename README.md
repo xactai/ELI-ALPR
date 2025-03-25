@@ -69,6 +69,7 @@ The `config.json` file contains all required settings. Without this file, the ap
   },
 
   "MJPEG_PORT": 8090,
+  "JSON_PORT": 8070,
   "MJPEG_WIDTH": 1920,
   "MJPEG_HEIGHT": 1080,
 
