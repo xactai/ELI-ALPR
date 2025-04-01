@@ -27,8 +27,17 @@
 This repository presents an implementation of Automatic License Plate Recognition (ALPR), built upon state-of-the-art YOLO models (from the research listed on Papers with Code) using the Darknet framework. Our system achieves an impressive accuracy of 96.9%, as reported in the original research.
 
 ---
-### **Features**
-The original research introduced three models:
+### **ELI-ALPR Pipeline Diagram**
+Below is the pipeline diagram that illustrates the key components and workflow of the ELI-ALPR system:
+```bash
+(Vehicle Detection) -> (License Plate Detection) -> (License Plate Recognition)
+```
+
+![ELI-ALPR_Pipeline_Diagram](https://github.com/user-attachments/assets/c6403eb6-3fdc-4d36-802e-82395ed57740)
+
+
+### **Pipeline Features**
+The ELI-ALPR system works in a three-stage pipeline based on the original research papers:
 
 - **Vehicle Detection**: Identifies vehicles such as cars and bikes.
 - **License Plate Detection**: Detects license plates across various geographies.
@@ -44,7 +53,7 @@ While the original approach involved manually cropping vehicles, license plates,
 This solution enables quicker, fully automated license plate recognition, improving the overall accuracy and speed of real-world applications.
 
 ---
-### **Examples**
+### **Examples of Outputs from the Original Research**
 ------------
 
 |IMAGE|DETECTIONS|RESULTS|
@@ -56,7 +65,7 @@ This solution enables quicker, fully automated license plate recognition, improv
 
 ### **ELI-ALPR Image Output**
 
-- The output image highlights ELI-ALPR's performance, showcasing its ability to detect and recognize cars, bikes, and their license plates. Each plate is accurately identified, with bounding boxes drawn around the plates, and the recognized plate number displayed above the corresponding vehicle. This demonstrates the system’s effectiveness in both vehicle and license plate detection.
+- The output image highlights **ELI-ALPR**'s performance, showcasing its ability to detect and recognize cars, bikes, and their license plates. Each plate is accurately identified, with bounding boxes drawn around the plates, and the recognized plate number displayed above the corresponding vehicle. This demonstrates the system’s effectiveness in both vehicle and license plate detection.
 
 [ELI-ALPR_Academic_Image_output.webm](https://github.com/user-attachments/assets/e2f5cc77-7a99-4fde-b8a7-d9826a0effdc)
 
