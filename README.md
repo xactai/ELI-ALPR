@@ -13,8 +13,8 @@
 
 |**DAJA**|Definitions, Acronyms, Jargon and Abbreviations|
 | :------------ | :------------ |
-|**ELI-ALPR**|Efficient Layout Independent Automatic License Plate Recognition|
-|**SoA**|State of Art|
+|**ELI-ALPR**|Efficient Layout-Independent Automatic License Plate Recognition|
+|**SoA**|State of the Art|
 |**YOLO**|You Only Look Once|
 |**OCR**|Optical Character Recognition|
 |**BBOX**|Bounding Box|
