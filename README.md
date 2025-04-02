@@ -28,13 +28,12 @@ This repository presents an implementation of Automatic License Plate Recognitio
 
 ---
 ### **ELI-ALPR Pipeline Diagram**
-Below is the pipeline diagram that illustrates the key components and workflow of the ELI-ALPR system:
+Below is This pipeline demonstrates a multi-stage object detection system using the YOLO model. It processes images, videos, or live streams to detect vehicles, identify their license plates, and extract alphanumeric characters for further analysis. The final output consists of annotated bounding boxes displaying detected objects.
+
 ```bash
 (Vehicle Detection) -> (License Plate Detection) -> (License Plate Recognition)
 ```
-
-![ELI-ALPR_Pipeline_Diagram](https://github.com/user-attachments/assets/c6403eb6-3fdc-4d36-802e-82395ed57740)
-
+![Flowchart_Shake(11)](https://github.com/user-attachments/assets/981d431b-fedb-4439-adbf-34afa8136474)
 
 ### **Pipeline Features**
 The ELI-ALPR system works in a three-stage pipeline based on the original research papers:
