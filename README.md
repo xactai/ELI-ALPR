@@ -32,7 +32,7 @@ Below is the pipeline diagram that illustrates the key components and workflow o
 ```bash
 (Vehicle Detection) -> (License Plate Detection) -> (License Plate Recognition)
 ```
-![Pipeline_flowchart_for_ELI-ALPR](https://github.com/user-attachments/assets/57c26e44-28d1-430c-ab50-b48a44751837)
+![Pipeline_flowchart_image](https://github.com/user-attachments/assets/ac0853d0-282c-4a45-b926-34f9418eb572)
 
 ### **Pipeline Features**
 The ELI-ALPR system works in a three-stage pipeline based on the original research papers:
