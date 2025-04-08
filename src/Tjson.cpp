@@ -7,7 +7,7 @@
 #include <iostream>
 #include <fstream>
 //----------------------------------------------------------------------------------------
-Tjson::Tjson(): MJPEG_Port(0),, JSON_Port(0) {
+Tjson::Tjson(): MJPEG_Port(0), JSON_Port(0) {
 
     Jvalid=false;
 }
