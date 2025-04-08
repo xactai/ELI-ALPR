@@ -12,6 +12,7 @@
 #include "Regression.h"
 #include "Tjson.h"
 #include "MJPG_sender.h"
+#include <algorithm>
 
 using namespace std;
 
@@ -266,6 +267,7 @@ bool send_json_http(vector<bbox_t> cur_bbox_vec, vector<string> obj_names, strin
 
     send_json_custom(send_str.c_str(), port, timeout);
     return true;
+}
 }
 //----------------------------------------------------------------------------------------
 void CropMat(cv::Mat& In, cv::Mat& Out) //checks the RoI parameters on forehand
