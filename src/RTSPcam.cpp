@@ -108,8 +108,9 @@ void RTSPcam::ProcessOpen(void)
 
         Elapse   = chrono::duration_cast<chrono::milliseconds> (Tgrab - Tyet).count();
         FrameTime=Elapse/COUNT;
-        if(FrameTime<19.0) FrameTime=19.0;      //limit to 52.631 FPS max
-        FPS=1000.0/FrameTime;
+        if (FPS > 0.0) {
+            FrameTime = 1000.0 / FPS;
+        }
     }
     fpsPrintTime = std::chrono::steady_clock::now();
     cout << "FPS : " << FPS << endl;
