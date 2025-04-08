@@ -11,7 +11,7 @@ macro(use_cxx11)
     set (CMAKE_CXX_STANDARD 17)
   endif ()
 endmacro(use_cxx11)
-
+use_cxx11()
 find_package(OpenCV REQUIRED)                              
 
 set(SOURCES src/main.cpp src/RTSPcam.cpp src/Regression.cpp src/Tjson.cpp src/MJPG_sender.cpp src/Regression.cpp)
