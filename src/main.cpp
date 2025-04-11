@@ -217,7 +217,7 @@ void send_mjpeg(cv::Mat& mat, int port, int timeout, int quality)
 }
 //----------------------------------------------------------------------------------------
 bool send_json_http(vector<bbox_t> cur_bbox_vec, vector<string> obj_names, string frame_id,
-                    string filename = string(), int timeout = 400000, int port = 8070){
+                    string filename = string(), int timeout = 400000, int port = -1){
     string send_str;
 
     char *tmp_buf = (char *)calloc(1024, sizeof(char));
@@ -263,6 +263,9 @@ bool send_json_http(vector<bbox_t> cur_bbox_vec, vector<string> obj_names, strin
         ofstream Jfile(Js.Json_Folder + "/" + frame_id + ".json");
         Jfile << send_str;
         Jfile.close();
+    }
+     if (port == -1) {
+        port = Js.JSON_Port;
     }
 
     send_json_custom(send_str.c_str(), port, timeout);
