@@ -225,11 +225,7 @@ bool send_json_http(vector<bbox_t> cur_bbox_vec, vector<string> obj_names, strin
     send_str = tmp_buf;
     free(tmp_buf);
 
-    for (size_t idx = 0; idx < cur_bbox_vec.size(); idx++) {
-        auto &i = cur_bbox_vec[idx];
-        char *buf = (char *)calloc(2048, sizeof(char));
-
-        // Iterate over each bounding box to form JSON objects
+    // Iterate over each bounding box to form JSON objects
     for (size_t idx = 0; idx < cur_bbox_vec.size(); idx++) {
         auto &i = cur_bbox_vec[idx];
         char *buf = (char *)calloc(2048, sizeof(char));
