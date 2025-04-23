@@ -296,8 +296,8 @@ void CropMat(cv::Mat& In, cv::Mat& Out) //checks the RoI parameters on forehand
     Js.RoiCrop = R;
 }
 //----------------------------------------------------------------------------------------
-int main()
-{
+int main(int argc, char** argv) {
+
     bool Success;
     char ChrCar='a';
     char ChrPlate='1';
