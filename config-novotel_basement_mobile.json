@@ -1,0 +1,45 @@
+{
+  "VERSION": "1.0.0",
+  "VIDEO_INPUT": "novotel_basement_mobile",
+  "VIDEO_INPUTS_PARAMS": {
+    "image-1": "/home/xactai/Pictures/academic-sample-image.jpg",
+    "image-2": "/home/xactai/Pictures/AP31CY8559_grey.png", 
+    "folder": "/home/xactai/Pictures/Academic+NovotelOUT-Images",
+    "video": "/home/xactai/Videos/Novotel-basement-moble.mp4",
+    "novotel_basement_mobile": "/home/xactai/Videos/Novotel-basement-moble.mp4",
+    "video_gstreamer": "filesrc location=/home/xactai/Videos/<> ! parsebin ! nvh264sldec ! videorate ! video/x-raw,framerate=5/1 ! videoconvert ! appsink",
+    "usbcam": "v4l2src device=/dev/video0 ! video/x-raw, framerate=30/1, width=640, height=360 ! videoconvert ! appsink",
+    "CCTV": "rtsp://admins:123456@192.168.30.131:554/stream1"
+  },
+
+  "RoI": {
+    "x_offset": 0,
+    "y_offset": 0,
+    "width": 1080,
+    "height": 1920
+  },
+
+  "MJPEG_PORT": 6090,
+  "JSON_PORT": 6070,
+  "MJPEG_WIDTH": 1080,
+  "MJPEG_HEIGHT": 1920,
+ 
+  "VEHICLE_MODEL": "./models/vehicle-detection",
+  "LICENSE_MODEL": "./models/lp-detection-layout-classification",
+  "OCR_MODEL": "./models/lp-recognition",
+
+  "HEURISTIC_ON": false,
+  
+  "PRINT_ON_CLI": true,
+  "PRINT_ON_RENDER": true,
+
+  "FoI_FOLDER": "none",
+  "VEHICLES_FOLDER": "none",
+  "PLATES_FOLDER": "none",
+  "JSONS_FOLDER": "none",
+  "RENDERS_FOLDER": "none",
+
+  "THRESHOLD_VEHICLE": 0.5,
+  "THRESHOLD_PLATE": 0.5,
+  "THRESHOLD_OCR": 0.5
+}

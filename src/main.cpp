@@ -312,10 +312,23 @@ int main()
     //Js takes care of printing errors.
     Js.LoadFromFile("./config.json");
 
-    Success = Js.GetSettings();
-    if(!Success){
-        return -1;
-    }
+   //Js takes care of printing errors.
+   std::string config_file = "./config.json";
+
+   if (argc > 1) {
+       config_file = argv[1];
+       std::cout << "Using config file: " << config_file << std::endl;
+   } else {
+       std::cout << "No config file provided. Using default: " << config_file << std::endl;
+   }
+
+   Js.LoadFromFile(config_file);
+
+   Success = Js.GetSettings();
+   if (!Success) {
+       std::cerr << "Failed to load config: " << config_file << std::endl;
+       return -1;
+   }
 
     cout << "ALPR Version : " << Js.Version << endl;
 
