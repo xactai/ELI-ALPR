@@ -11,8 +11,8 @@
   },
 
   "RoI": {
-    "x_offset": 1920,
-    "y_offset": 1080,
+    "x_offset": 0,
+    "y_offset": 0,
     "width": 1920,
     "height": 1080
   },
@@ -34,7 +34,7 @@
   "FoI_FOLDER": "none",
   "VEHICLES_FOLDER": "none",
   "PLATES_FOLDER": "none",
-  "JSONS_FOLDER": "./outputs/jsons",
+  "JSONS_FOLDER": "none",
   "RENDERS_FOLDER": "none",
 
   "THRESHOLD_VEHICLE": 0.5,
