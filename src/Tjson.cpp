@@ -7,7 +7,7 @@
 #include <iostream>
 #include <fstream>
 //----------------------------------------------------------------------------------------
-Tjson::Tjson(): MJPEG_Port(0), JSON_Port(0) {
+Tjson::Tjson(): MJPEG_Port(0), JSON_Port(0),Headless(false) {
 
     Jvalid=false;
 }
@@ -59,6 +59,7 @@ bool Tjson::GetSettings(void)
         if(!GetSetting(j,"PRINT_ON_CLI",PrintOnCli))       return Success;
         if(!GetSetting(j,"PRINT_ON_RENDER",PrintOnRender)) return Success;
         if(!GetSetting(j,"HEURISTIC_ON",HeuristicsOn))     return Success;
+        if(!GetSetting(j,"HEADLESS",Headless))             return Success;
         if(!GetSetting(j,"THRESHOLD_VEHICLE",ThresCar))   return Success;
         if(!GetSetting(j,"THRESHOLD_PLATE",ThresPlate))    return Success;
         if(!GetSetting(j,"THRESHOLD_OCR",ThresOCR))        return Success;

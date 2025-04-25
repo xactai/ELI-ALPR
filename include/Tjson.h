@@ -42,6 +42,7 @@ public:
     bool   PrintOnCli;        //Show license plate on teminal
     bool PrintOnRender;       //show license plate in window
     bool HeuristicsOn;        //Sort character position and remove doubles
+    bool Headless;
     double   ThresCar;        //threshold detection of car model
     double ThresPlate;        //threshold detection of license plate model
     double   ThresOCR;        //threshold detection of ocr model

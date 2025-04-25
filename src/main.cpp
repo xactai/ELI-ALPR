@@ -331,6 +331,12 @@ int main(int argc, char** argv) {
    }
 
     cout << "ALPR Version : " << Js.Version << endl;
+     // Print current mode based on config
+   if (Js.Headless) {
+    std::cout << "[INFO] Headless mode activated from config." << std::endl;
+    } else {
+        std::cout << "[INFO] GUI mode activated from config." << std::endl;
+    }
 
     //see if we must make some output directories.
     Js.MakeFolders();
@@ -457,7 +463,7 @@ int main(int argc, char** argv) {
                     cout << "CurrentFileName : "<< cam.CurrentFileName << endl;
 
                     //show frame
-                    if(Js.PrintOnRender){
+                    if (Js.PrintOnRender && !Js.Headless) {
                         cv::imshow("RTSP stream",frame_full_render);
                         if(cam.UsePicture){
                             char esc = cv::waitKey();       //in case of a static picture wait infinitive
