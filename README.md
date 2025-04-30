@@ -1,4 +1,4 @@
-# ELI-ALPR on Paperswithcode with SoA YOLO in Darknet</p>
+# ELI-ALPR on PapersWithCode with SoA YOLO in Darknet</p>
 
 ------------
 
