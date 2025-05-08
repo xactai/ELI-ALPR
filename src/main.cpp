@@ -4,6 +4,7 @@
 #include <vector>
 #include <fstream>
 #include <thread>
+#include <regex>
 #include <opencv2/opencv.hpp>
 #include "opencv2/core/version.hpp"
 #include "opencv2/videoio/videoio.hpp"
@@ -15,6 +16,7 @@
 #include <algorithm>
 
 using namespace std;
+bool messagePrinted = false;
 
 //----------------------------------------------------------------------------------------
 // set the config.json with its settings global
@@ -332,11 +334,6 @@ int main(int argc, char** argv) {
 
     cout << "ALPR Version : " << Js.Version << endl;
      // Print current mode based on config
-   if (Js.Headless) {
-    std::cout << "[INFO] Headless mode activated from config." << std::endl;
-    } else {
-        std::cout << "[INFO] GUI mode activated from config." << std::endl;
-    }
 
     //see if we must make some output directories.
     Js.MakeFolders();
@@ -355,8 +352,12 @@ int main(int argc, char** argv) {
     while (true) {
         try {
             if(!cam.GetLatestFrame(frame_full)){
-                cout<<"Input stream is closed"<<endl;
-                break;
+                if (!messagePrinted) {
+                    std::cout << "Input stream is closed" << std::endl;
+                    messagePrinted = true;
+                }
+                std::this_thread::sleep_for(std::chrono::milliseconds(1));
+                continue;
             }
             else{
                 if(!frame_full.empty()){
@@ -444,11 +445,19 @@ int main(int argc, char** argv) {
                     }
                                         
                     int frame_id = -1;
-                   try {
-                       frame_id = std::stoi(cam.CurrentFileName);  
-                   } catch (const std::exception& e) {
-                       cerr << "Error in stoi conversion: " << e.what() << endl;
-                   }
+                    std::smatch match;
+                    std::regex re("(\\d+)");
+                    
+                    if (std::regex_search(cam.CurrentFileName, match, re)) {
+                        try {
+                            frame_id = std::stoi(match.str(1));
+                        } catch (...) {
+                            frame_id = 0;
+                        }
+                    } else {
+                        static int static_frame_counter = 0;
+                        frame_id = static_frame_counter++;
+                    }
                     //send json into the world (port 8070)
                     send_json_http(result_car, CarNames, std::to_string(frame_id), cam.CurrentFileName + "_" + ChrCar + "_" + ChrPlate + "_utc.json");
 
@@ -463,7 +472,7 @@ int main(int argc, char** argv) {
                     cout << "CurrentFileName : "<< cam.CurrentFileName << endl;
 
                     //show frame
-                    if (Js.PrintOnRender && !Js.Headless) {
+                    if(Js.PrintOnRender){
                         cv::imshow("RTSP stream",frame_full_render);
                         if(cam.UsePicture){
                             char esc = cv::waitKey();       //in case of a static picture wait infinitive

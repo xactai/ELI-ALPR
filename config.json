@@ -27,7 +27,6 @@
   "OCR_MODEL": "./models/lp-recognition",
 
   "HEURISTIC_ON": false,
-  "HEADLESS": false,
   
   "PRINT_ON_CLI": true,
   "PRINT_ON_RENDER": true,
