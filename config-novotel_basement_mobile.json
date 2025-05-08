@@ -31,7 +31,7 @@
   "HEURISTIC_ON": false,
   
   "PRINT_ON_CLI": true,
-  "PRINT_ON_RENDER": true,
+  "PRINT_ON_RENDER": false,
 
   "FoI_FOLDER": "none",
   "VEHICLES_FOLDER": "none",
