@@ -89,117 +89,89 @@ vector<string> objects_names_from_file(string const filename)
 	return file_lines;
 }
 //----------------------------------------------------------------------------------------
-//note, SortSingleLine can erase elements from cur_bbox_vec
-//that way shorten the length of the vector. Hence size_t& bnd
-void SortSingleLine(vector<bbox_t>& cur_bbox_vec, float ch_wd, float ch_ht, size_t StartPos, size_t& StopPos)
-{
-    // Ensure StartPos and StopPos are within bounds
-    if (StartPos >= cur_bbox_vec.size() || StopPos > cur_bbox_vec.size() || StopPos <= StartPos) return;
-    size_t i, j;
-    bbox_t tmp_box;
-    int d, i1, i2;
+void SortSingleLine(std::vector<bbox_t>& vec, float ch_wd, float ch_ht, size_t start, size_t& stop) {
+    if (start >= vec.size() || stop > vec.size() || stop <= start) return;
 
-    if((StopPos-StartPos)<=1) return;
+    // Sort by x-position
+    std::sort(vec.begin() + start, vec.begin() + stop, [](const bbox_t& a, const bbox_t& b) {
+        return a.x < b.x;
+    });
 
-    //sort by x position
-    for(i=StartPos; i<StopPos; i++){
-        for(j=i+1; j<StopPos; j++){
-            if(cur_bbox_vec[j].x<cur_bbox_vec[i].x){
-                //swap
-                tmp_box=cur_bbox_vec[j];
-                cur_bbox_vec[j]=cur_bbox_vec[i];
-                cur_bbox_vec[i]=tmp_box;
-            }
-        }
-    }
-
-    //get the distance between each char, too close? select the highest prob.
-    for(i=StartPos; i<StopPos-1; i++){
-        i1=cur_bbox_vec[i].x; i2=cur_bbox_vec[i+1].x;
-        d=(i2-i1)*2;            //d<0? two lines and jumping from the top to the bottom line.
-        if(d>=0 && d<ch_wd){
-            if(cur_bbox_vec[i+1].prob < cur_bbox_vec[i].prob) cur_bbox_vec.erase(cur_bbox_vec.begin()+i+1);
-            else                                              cur_bbox_vec.erase(cur_bbox_vec.begin()+i);
-            StopPos--;  i--;    //one element less in the array, due to the erase
+    // Remove overlapping/duplicate characters (too close)
+    for (size_t i = start; i < stop - 1; ++i) {
+        int d = (vec[i + 1].x - vec[i].x) * 2;
+        if (d >= 0 && d < ch_wd) {
+            if (vec[i + 1].prob < vec[i].prob)
+                vec.erase(vec.begin() + i + 1);
+            else
+                vec.erase(vec.begin() + i);
+            --stop;
+            --i;
         }
     }
 }
-//----------------------------------------------------------------------------------------
-void SortPlate(vector<bbox_t>& cur_bbox_vec)
-{
-    size_t i, j, n, bnd;
-    size_t len=cur_bbox_vec.size();
-    bbox_t tmp_box;
-    float prb,ch_wd, ch_ht;
-    double A, B, R;
-    TLinRegression LinReg;
 
-    if(len < 2) return;         //no need to investigate 1 character
+void SortPlate(std::vector<bbox_t>& vec) {
+    size_t len = vec.size();
+    if (len < 2) return;
 
-    //check nr of chars
-    while(len > 10){
-        //get the lowest probability
-        for(prb=1000.0, i=0;i<len;i++){
-            if(cur_bbox_vec[i].prob < prb){ prb=cur_bbox_vec[i].prob; n=i;}
-        }
-        //delete the lowest
-        cur_bbox_vec.erase(cur_bbox_vec.begin()+n);
-        len=cur_bbox_vec.size();
+    // Remove excess characters (keep top 10 by probability)
+    while (vec.size() > 10) {
+        auto min_it = std::min_element(vec.begin(), vec.end(),
+            [](const bbox_t& a, const bbox_t& b) { return a.prob < b.prob; });
+        vec.erase(min_it);
     }
 
-    //get average width and height of the characters
-    for(ch_ht=ch_wd=0.0, i=0; i<len; i++){
-        ch_wd+=cur_bbox_vec[i].w;
-        ch_ht+=cur_bbox_vec[i].h;
-    }
-    ch_wd/=len; ch_ht/=len;
+    len = vec.size();
+    if (len < 2) return;
 
-    if(len > 4){
-        //get linear regression through all (x,y)
-        for(i=0; i<len; i++){
-            LinReg.Add(cur_bbox_vec[i].x, cur_bbox_vec[i].y);
-        }
-        LinReg.Execute(A,B,R);
-        //now you can do a warp perspective if the skew is too large.
-        //in that case, you have to run the ocr detection again.
-        //here we see how well a single line fits all the characters.
-        //if the standard deviation is high, you have one line of text
-        //if the R is low, you have a two-line number plate.
-
-//        cout << "A = " << A << "  B = " << B << "  R = " << R << endl;
+    // Compute average width and height
+    float avg_w = 0, avg_h = 0;
+    for (const auto& b : vec) {
+        avg_w += b.w;
+        avg_h += b.h;
     }
-    else{
-        R=1.0;  // with 4 or fewer characters, assume we got always one line.
-    }
+    avg_w /= len;
+    avg_h /= len;
 
-    if(R<0.08 && A>-1.0 && A<1.0){
-        //two lines -> sort on y first
-        for(i=0; i<len; i++){
-            for(j=i+1; j<len; j++){
-                if(cur_bbox_vec[j].y<cur_bbox_vec[i].y){
-                    //swap
-                    tmp_box=cur_bbox_vec[j];
-                    cur_bbox_vec[j]=cur_bbox_vec[i];
-                    cur_bbox_vec[i]=tmp_box;
-                }
-            }
+    // Compute average Y to do clustering into top and bottom lines
+    std::vector<float> ys(len);
+    for (size_t i = 0; i < len; ++i) ys[i] = vec[i].y;
+
+    float mean_y = std::accumulate(ys.begin(), ys.end(), 0.0f) / len;
+    float variance = 0;
+    for (float y : ys) variance += (y - mean_y) * (y - mean_y);
+    variance /= len;
+    float stddev_y = std::sqrt(variance);
+
+    // Heuristic: if Y standard deviation is large → assume 2 lines
+    bool is_two_lines = (stddev_y > avg_h * 0.5);
+
+    if (is_two_lines) {
+        // Split into two lines based on average Y
+        std::vector<bbox_t> top_line, bottom_line;
+        for (const auto& b : vec) {
+            if (b.y < mean_y)
+                top_line.push_back(b);
+            else
+                bottom_line.push_back(b);
         }
 
-        //get the boundary between the first and second line.
-        for(n=0, i=0; i<len-1; i++){
-            j=cur_bbox_vec[i+1].y-cur_bbox_vec[i].y;
-            if(j>n){ n=j; bnd=i+1; }
-        }
-        //sort the first line 0 < bnd
-        SortSingleLine(cur_bbox_vec, ch_wd, ch_ht, 0, bnd);
+        // Sort each line
+        size_t bnd1 = top_line.size();
+        SortSingleLine(top_line, avg_w, avg_h, 0, bnd1);
 
-        len=cur_bbox_vec.size();        //SortSingleLine can shorten the length of the vector
-        //sort the second line bnd < len
-        SortSingleLine(cur_bbox_vec, ch_wd, ch_ht, bnd, len);
-    }
-    else{
-        //one line -> sort by x position
-        SortSingleLine(cur_bbox_vec, ch_wd, ch_ht, 0, len);
+        size_t bnd2 = bottom_line.size();
+        SortSingleLine(bottom_line, avg_w, avg_h, 0, bnd2);
+
+        // Merge back
+        vec.clear();
+        vec.insert(vec.end(), top_line.begin(), top_line.end());
+        vec.insert(vec.end(), bottom_line.begin(), bottom_line.end());
+    } else {
+        // One line — sort all by x
+        size_t end = len;
+        SortSingleLine(vec, avg_w, avg_h, 0, end);
     }
 }
 //----------------------------------------------------------------------------------------
