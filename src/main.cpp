@@ -1,6 +1,9 @@
 #include <iostream>
 #include <iomanip>
 #include <string>
+#include <algorithm>
+#include <cmath>
+#include <numeric>
 #include <vector>
 #include <fstream>
 #include <thread>
@@ -271,59 +274,56 @@ void CropMat(cv::Mat& In, cv::Mat& Out) //checks the RoI parameters on forehand
 }
 //----------------------------------------------------------------------------------------
 int main(int argc, char** argv) {
-
     bool Success;
-    char ChrCar='a';
-    char ChrPlate='1';
-    unsigned int Wd, Ht;
-    unsigned int WdC, HtC;
-    cv::Mat frame;
-    cv::Mat frame_full;
-    cv::Mat frame_full_render;
+    char ChrCar = 'a';
+    char ChrPlate = '1';
+    unsigned int Wd, Ht, WdC, HtC;
+    cv::Mat frame, frame_full, frame_full_render;
     RTSPcam cam;
     vector<bbox_t> result_ocr;
+    bool messagePrinted = false;
+    int frame_id = 0;
 
-    //Js takes care of printing errors.
-    Js.LoadFromFile("./config.json");
+    static int prev_cols = 0, prev_rows = 0;
 
-   //Js takes care of printing errors.
-   std::string config_file = "./config.json";
+    std::string config_file = "./config.json";
+    if (argc > 1) {
+        config_file = argv[1];
+        std::cout << "Using config file: " << config_file << std::endl;
+    } else {
+        std::cout << "No config file provided. Using default: " << config_file << std::endl;
+    }
 
-   if (argc > 1) {
-       config_file = argv[1];
-       std::cout << "Using config file: " << config_file << std::endl;
-   } else {
-       std::cout << "No config file provided. Using default: " << config_file << std::endl;
-   }
+    Js.LoadFromFile(config_file);
+    Success = Js.GetSettings();
+    if (!Success) {
+        std::cerr << "Failed to load config: " << config_file << std::endl;
+        return -1;
+    }
 
-   Js.LoadFromFile(config_file);
-
-   Success = Js.GetSettings();
-   if (!Success) {
-       std::cerr << "Failed to load config: " << config_file << std::endl;
-       return -1;
-   }
-
-    cout << "ALPR Version : " << Js.Version << endl;
-     // Print current mode based on config
-
-    //see if we must make some output directories.
+    std::cout << "ALPR Version : " << Js.Version << std::endl;
     Js.MakeFolders();
 
-	Detector CarNet(Js.Cstr+".cfg", Js.Cstr+".weights");
-	auto CarNames = objects_names_from_file(Js.Cstr+".names");
+    // --- OPEN CSV FILE IN OVERWRITE MODE TO CLEAR PREVIOUS DATA ---
+    std::ofstream ocr_log_file("ocr_log.csv", std::ios::out); // no std::ios::app here
+    ocr_log_file << "CurrentFileName,vehicle_ClassID,licensePlateText\n";
+    ocr_log_file.flush();
 
-	Detector PlateNet(Js.Lstr+".cfg", Js.Lstr+".weights");
-    auto PlateNames = objects_names_from_file(Js.Lstr+".names");
+    Detector CarNet(Js.Cstr + ".cfg", Js.Cstr + ".weights");
+    auto CarNames = objects_names_from_file(Js.Cstr + ".names");
 
-	Detector OcrNet(Js.Ostr+".cfg", Js.Ostr+".weights");
-	auto OcrNames = objects_names_from_file(Js.Ostr+".names");
+    Detector PlateNet(Js.Lstr + ".cfg", Js.Lstr + ".weights");
+    auto PlateNames = objects_names_from_file(Js.Lstr + ".names");
 
-    cam.Open(Js.Gstr);   //you can dump anything OpenCV eats. (cv::CAP_ANY)
+    Detector OcrNet(Js.Ostr + ".cfg", Js.Ostr + ".weights");
+    auto OcrNames = objects_names_from_file(Js.Ostr + ".names");
+
+    cam.Open(Js.Gstr);
+    cv::namedWindow("ALPR stream", cv::WINDOW_NORMAL);
 
     while (true) {
         try {
-            if(!cam.GetLatestFrame(frame_full)){
+            if (!cam.GetLatestFrame(frame_full)) {
                 if (!messagePrinted) {
                     std::cout << "Input stream is closed" << std::endl;
                     messagePrinted = true;
@@ -331,137 +331,144 @@ int main(int argc, char** argv) {
                 std::this_thread::sleep_for(std::chrono::milliseconds(1));
                 continue;
             }
-            else{
-                if(!frame_full.empty()){
-                    //store the frame_full only if the directory name is valid
-                    //note it stores a MASSIVE bulk of pictures on your disk!
-                    if(Js.FoI_Folder!="none"){
-                        cv::imwrite( Js.FoI_Folder+"/"+cam.CurrentFileName+"_utc.png", frame_full);
+
+            if (!frame_full.empty()) {
+                if (frame_full_render.size() != frame_full.size() || frame_full_render.type() != frame_full.type()) {
+                    frame_full_render.create(frame_full.size(), frame_full.type());
+                }
+
+                frame_full.copyTo(frame_full_render);
+                frame_id = -1;
+                std::smatch match;
+                std::regex re("(\\d+)");
+                if (std::regex_search(cam.CurrentFileName, match, re)) {
+                    try {
+                        frame_id = std::stoi(match.str(1));
+                    } catch (...) {
+                        frame_id = 0;
                     }
-                    //crop and copy the frame
-                    frame_full_render = frame_full.clone();
-                    CropMat(frame_full,frame);
-                    //draw crop borders
-                    cv::rectangle(frame_full_render, Js.RoiCrop, cv::Scalar(128, 128, 128),2);
+                } else {
+                    static int static_frame_counter = 0;
+                    frame_id = static_frame_counter++;
+                }
+                if (frame_full_render.cols != prev_cols || frame_full_render.rows != prev_rows) {
+                    cv::resizeWindow("ALPR stream", frame_full_render.cols, frame_full_render.rows);
+                    prev_cols = frame_full_render.cols;
+                    prev_rows = frame_full_render.rows;
+                }
 
-                    //detect the cars
-                    vector<bbox_t> result_car = CarNet.detect(frame,Js.ThresCar);
+                if (Js.FoI_Folder != "none") {
+                    cv::imwrite(Js.FoI_Folder + "/" + cam.CurrentFileName + "_utc.png", frame_full);
+                }
 
-                    //loop through the found cars/motorbikes
-                    Wd = frame.cols;  Ht = frame.rows; ChrCar='a';
-                    for (auto &i : result_car) {
-                        //a known issue; the whole image is selected as an object -> skip this result
-                        if((100*i.w>(95*Wd)) || (100*i.h>(95*Ht))) continue;    //stay in the integer domain
-                        //Create the rectangle
-                        if((i.w > 40) && (i.h > 40) &&    //get some width and height (40x40)
-                           ((i.x + i.w) < Wd) && ((i.y + i.h) < Ht)){
-                                cv::Rect roi(i.x, i.y, i.w, i.h);
-                                //Create the ROI
-                                cv::Mat frame_car = frame(roi);
+                CropMat(frame_full, frame);
+                cv::rectangle(frame_full_render, Js.RoiCrop, cv::Scalar(128, 128, 128), 2);
 
-                                //draw borders around cars/motorbikes
-                                draw_vehicle(frame_full_render, i);
+                vector<bbox_t> result_car = CarNet.detect(frame, Js.ThresCar);
+                Wd = frame.cols;
+                Ht = frame.rows;
+                ChrCar = 'a';
 
-                                //store the car only if the directory name is valid
-                                if(Js.Car_Folder!="none"){
-                                    cv::imwrite( Js.Car_Folder+"/"+cam.CurrentFileName+"_"+ChrCar+"_utc.png", frame_car);
-                                    ChrCar++;
+                for (size_t vehicle_idx = 0; vehicle_idx < result_car.size(); vehicle_idx++) {
+                    auto& i = result_car[vehicle_idx];
+
+                    if ((100 * i.w > 95 * Wd) || (100 * i.h > 95 * Ht)) continue;
+                    if ((i.w > 40) && (i.h > 40) && ((i.x + i.w) < Wd) && ((i.y + i.h) < Ht)) {
+                        cv::Rect roi(i.x, i.y, i.w, i.h);
+                        cv::Mat frame_car = frame(roi);
+
+                        draw_vehicle(frame_full_render, i);
+
+                        if (Js.Car_Folder != "none") {
+                            cv::imwrite(Js.Car_Folder + "/" + cam.CurrentFileName + "_" + ChrCar + "_utc.png", frame_car);
+                            ChrCar++;
+                        }
+
+                        vector<bbox_t> result_plate = PlateNet.detect(frame_car, Js.ThresPlate);
+                        WdC = frame_car.cols;
+                        HtC = frame_car.rows;
+                        ChrPlate = '1';
+
+                        std::string final_plate_text;
+
+                        if (!result_plate.empty()) {
+                            auto& j = result_plate[0];
+
+                            if ((j.w > 20) && (j.h > 10) && ((j.x + 2 + j.w) < WdC) && ((j.y + 2 + j.h) < HtC)) {
+                                cv::Rect roi_plate(j.x, j.y, j.w + 2, j.h + 2);
+                                cv::Mat frame_plate = frame_car(roi_plate);
+
+                                draw_plate(frame_full_render, i, j);
+
+                                if (Js.Plate_Folder != "none") {
+                                    cv::imwrite(Js.Plate_Folder + "/" + cam.CurrentFileName + "_" + ChrCar + "_" + ChrPlate + "_utc.png", frame_plate);
+                                    ChrPlate++;
                                 }
 
-                                //detect plates
-                                vector<bbox_t> result_plate = PlateNet.detect(frame_car,Js.ThresPlate);
+                                result_ocr = OcrNet.detect(frame_plate, Js.ThresOCR);
 
-                                //loop through the found license plates
-                                WdC = frame_car.cols;  HtC = frame_car.rows; ChrPlate='1';
-                                for (auto &j : result_plate) {
-                                    WdC = frame_car.cols;  HtC = frame_car.rows;
-                                    if((j.w > 20) && (j.h > 10) &&    //get some width and height (20x10)
-                                       ((j.x + 2 + j.w) < WdC) && ((j.y + 2 + j.h) < HtC)){
-                                        cv::Rect roi(j.x, j.y, j.w+2, j.h+2);
-                                        //Create the ROI
-                                        cv::Mat frame_plate = frame_car(roi);
-
-                                        //draw borders around plates
-                                        draw_plate(frame_full_render, i, j);
-                                        //store the car only if the directory name is valid
-                                        if(Js.Plate_Folder!="none"){
-                                            cv::imwrite( Js.Plate_Folder+"/"+cam.CurrentFileName+"_"+ChrCar+"_"+ChrPlate+"_utc.png", frame_plate);
-                                            ChrPlate++;
-                                        }
-
-                                        //detect plates
-                                        result_ocr = OcrNet.detect(frame_plate,Js.ThresOCR);
-
-                                        //heuristics
-                                        if(Js.HeuristicsOn){
-                                            SortPlate(result_ocr);
-                                        }
-                                        else {
-                                            SortPlate(result_ocr);  // Even when heuristics are off, still call SortPlate
-                                        }    
-
-                                        //show
-                                        if(Js.PrintOnCli){
-                                            print_result(result_ocr, OcrNames);
-                                        }
-                                        //draw borders around plates
-                                        draw_ocr(frame_full_render, i, j, result_ocr, OcrNames);
+                                if (Js.HeuristicsOn) {
+                                    SortPlate(result_ocr);
                                 }
+
+                                final_plate_text.clear();
+                                for (const auto& ch : result_ocr) {
+                                    cv::rectangle(frame_full_render,
+                                        cv::Rect(Js.RoiCrop.x + i.x + j.x + ch.x,
+                                                 Js.RoiCrop.y + i.y + j.y + ch.y,
+                                                 ch.w, ch.h),
+                                        cv::Scalar(0, 255, 255), 2);
+                                    final_plate_text += OcrNames[ch.obj_id];
+                                }
+
+                                if (Js.PrintOnCli) {
+                                    print_result(result_ocr, OcrNames);
+                                }
+
+                                draw_ocr(frame_full_render, i, j, result_ocr, OcrNames);
                             }
+                        } else {
+                            final_plate_text = "-";
                         }
-                        //store the frame_full only if the directory name is valid
-                        //note it stores a MASSIVE bulk of pictures on your disk!
-                        if(Js.Render_Folder!="none"){
-                            cv::imwrite( Js.Render_Folder+"/"+cam.CurrentFileName+"_utc.png", frame_full_render);
-                        }
-                    }
-                                        
-                    int frame_id = -1;
-                    std::smatch match;
-                    std::regex re("(\\d+)");
-                    
-                    if (std::regex_search(cam.CurrentFileName, match, re)) {
-                        try {
-                            frame_id = std::stoi(match.str(1));
-                        } catch (...) {
-                            frame_id = 0;
-                        }
-                    } else {
-                        static int static_frame_counter = 0;
-                        frame_id = static_frame_counter++;
-                    }
-                    //send json into the world (port 8070)
-                    send_json_http(result_car, CarNames, std::to_string(frame_id), cam.CurrentFileName + "_" + ChrCar + "_" + ChrPlate + "_utc.json");
 
-                    //send the frame to port 8090
-                    if(Js.MJPEG_Port > 0){
-                        cv::Mat frame_resize(Js.MJPEG_Height, Js.MJPEG_Width, CV_8UC3);
-                        cv::resize(frame_full_render,frame_resize,frame_resize.size(),0,0);
-                        send_mjpeg(frame_resize, Js.MJPEG_Port, 4000000, 90);
-                    }
+                        ocr_log_file << cam.CurrentFileName << "," << i.obj_id << "," << final_plate_text << "\n";
+                        ocr_log_file.flush();
 
-                    //print frame
-                    cout << "CurrentFileName : "<< cam.CurrentFileName << endl;
-
-                    //show frame
-                    if(Js.PrintOnRender){
-                        cv::imshow("RTSP stream",frame_full_render);
-                        if(cam.UsePicture){
-                            char esc = cv::waitKey();       //in case of a static picture wait infinitive
-                            if(esc == 27) break;
-                        }
-                        else{
-                            char esc = cv::waitKey(5);
-                            if(esc == 27) break;
-                        }
+                        std::cout << "[CSV] " << cam.CurrentFileName << "," << i.obj_id << "," << final_plate_text << std::endl;
                     }
                 }
+
+                if (Js.Render_Folder != "none") {
+                    cv::imwrite(Js.Render_Folder + "/" + cam.CurrentFileName + "_utc.png", frame_full_render);
+                }
+
+                std::string json_name = cam.CurrentFileName + "_" + ChrCar + "_" + ChrPlate + "_" + std::to_string(frame_id) + "_utc.json";
+                send_json_http(result_car, CarNames, std::to_string(frame_id), json_name);
+
+                cv::Mat frame_resize;
+                cv::resize(frame_full_render, frame_resize, cv::Size(Js.MJPEG_Width, Js.MJPEG_Height));
+                if (Js.MJPEG_Port > 0) {
+                    send_mjpeg(frame_resize, Js.MJPEG_Port, 4000000, 90);
+                }
+
+                std::cout << "CurrentFileName : " << cam.CurrentFileName << std::endl;
+
+                if (Js.PrintOnRender) {
+                    cv::imshow("ALPR stream", frame_full_render);
+                    char esc = cam.UsePicture ? cv::waitKey() : cv::waitKey(5);
+                    if (esc == 27) break;
+                }
             }
+
+        } catch (std::exception& e) {
+            std::cerr << "Exception: " << e.what() << "\n"; getchar();
+        } catch (...) {
+            std::cerr << "Unknown exception\n"; getchar();
         }
-        catch (exception &e) { cerr << "exception: " << e.what() << "\n"; getchar(); }
-        catch (...) { cerr << "unknown exception \n"; getchar(); }
-	}
-	return 0;
+    }
+
+    ocr_log_file.close();
+    return 0;
 }
 //----------------------------------------------------------------------------------------
 
