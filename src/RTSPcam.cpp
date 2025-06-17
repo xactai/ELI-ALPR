@@ -184,7 +184,7 @@ bool RTSPcam::GetLatestFrame(cv::Mat& frame)
     auto now = std::chrono::steady_clock::now();
     if (std::chrono::duration_cast<std::chrono::seconds>(now - fpsPrintTime).count() >= 5) {
     double actualFPS = 1000.0 / Elapse;
-    std::cout << "\r Actual FPS: " << std::fixed << std::setprecision(2) << actualFPS << std::flush;
+    //std::cout << "\r Actual FPS: " << std::fixed << std::setprecision(2) << actualFPS << std::flush;
     fpsPrintTime = now;
     }
 
