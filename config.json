@@ -26,7 +26,7 @@
   "LICENSE_MODEL": "./models/lp-detection-layout-classification",
   "OCR_MODEL": "./models/lp-recognition",
 
-  "HEURISTIC_ON": false,
+  "HEURISTIC_ON": true,
   
   "PRINT_ON_CLI": true,
   "PRINT_ON_RENDER": true,
