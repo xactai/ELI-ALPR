@@ -17,9 +17,9 @@
 #include "Tjson.h"
 #include "MJPG_sender.h"
 #include <algorithm>
+#include <mutex>
 
 using namespace std;
-bool messagePrinted = false;
 
 //----------------------------------------------------------------------------------------
 // set the config.json with its settings global
@@ -233,14 +233,13 @@ bool send_json_http(vector<bbox_t> cur_bbox_vec, vector<string> obj_names, strin
     send_str += " ]\n}";
 
     if(Js.Json_Folder!="none"){
-        ofstream Jfile(Js.Json_Folder + "/" + frame_id + ".json");
-        Jfile << send_str;
-        Jfile.close();
+        try {
+            ofstream Jfile(Js.Json_Folder + "/" + frame_id + ".json");
+            Jfile << send_str;
+            Jfile.close();
+        } catch(...) {}
     }
-     if (port == -1) {
-        port = Js.JSON_Port;
-    }
-
+    if (port == -1) port = Js.JSON_Port;
     send_json_custom(send_str.c_str(), port, timeout);
     return true;
 }
@@ -283,16 +282,11 @@ int main(int argc, char** argv) {
     vector<bbox_t> result_ocr;
     bool messagePrinted = false;
     int frame_id = 0;
-
     static int prev_cols = 0, prev_rows = 0;
 
+    // --- Load config ---
     std::string config_file = "./config.json";
-    if (argc > 1) {
-        config_file = argv[1];
-        std::cout << "Using config file: " << config_file << std::endl;
-    } else {
-        std::cout << "No config file provided. Using default: " << config_file << std::endl;
-    }
+    if (argc > 1) config_file = argv[1];
 
     Js.LoadFromFile(config_file);
     Success = Js.GetSettings();
@@ -304,11 +298,12 @@ int main(int argc, char** argv) {
     std::cout << "ALPR Version : " << Js.Version << std::endl;
     Js.MakeFolders();
 
-    // --- OPEN CSV FILE IN OVERWRITE MODE TO CLEAR PREVIOUS DATA ---
-    std::ofstream ocr_log_file("ocr_log.csv", std::ios::out); // no std::ios::app here
+    // --- CSV overwrite mode ---
+    std::ofstream ocr_log_file("ocr_log.csv", std::ios::out);
     ocr_log_file << "CurrentFileName,vehicle_ClassID,licensePlateText\n";
     ocr_log_file.flush();
 
+    // --- Load networks ---
     Detector CarNet(Js.Cstr + ".cfg", Js.Cstr + ".weights");
     auto CarNames = objects_names_from_file(Js.Cstr + ".names");
 
@@ -318,60 +313,95 @@ int main(int argc, char** argv) {
     Detector OcrNet(Js.Ostr + ".cfg", Js.Ostr + ".weights");
     auto OcrNames = objects_names_from_file(Js.Ostr + ".names");
 
+    // --- Open camera/file/folder ---
     cam.Open(Js.Gstr);
-    cv::namedWindow("ALPR stream", cv::WINDOW_NORMAL);
+    cam.Loop = Js.Loop;  // Enable video looping if configured
 
+    cv::namedWindow("ELI-ALPR stream", cv::WINDOW_NORMAL);
+
+    // --- Main Loop ---
     while (true) {
         try {
+            // Get frame (auto-reconnect for RTSP)
             if (!cam.GetLatestFrame(frame_full)) {
                 if (!messagePrinted) {
-                    std::cout << "Input stream is closed" << std::endl;
+                    std::cout << "[ALPR] Input stream is closed or failed." << std::endl;
                     messagePrinted = true;
                 }
-                std::this_thread::sleep_for(std::chrono::milliseconds(1));
-                continue;
-            }
 
-            if (!frame_full.empty()) {
-                if (frame_full_render.size() != frame_full.size() || frame_full_render.type() != frame_full.type()) {
-                    frame_full_render.create(frame_full.size(), frame_full.type());
+                // --- Video handling ---
+                if (cam.UseVideo) {
+                    if (cam.Loop) {
+                        std::cout << "[ALPR] Video ended, looping..." << std::endl;
+                        cam.Rewind();
+                        messagePrinted = false;
+                        continue;
+                    } else {
+                        std::cout << "[ALPR] Video ended, stopping." << std::endl;
+                        break;
+                    }
                 }
 
+                // --- Picture / folder handling ---
+                if (cam.UsePicture || cam.UseFolder) {
+                    if (!cam.Loop) {
+                        std::cout << "[ALPR] Loop disabled, stopping." << std::endl;
+                        break;
+                    }
+                    messagePrinted = false;
+                    continue;
+                }
+
+                // --- Only RTSP reconnects ---
+                if (cam.UseRTSP) {
+                    std::cout << "[ALPR] Attempting to reconnect..." << std::endl;
+                    cam.Reconnect();
+                    std::this_thread::sleep_for(std::chrono::milliseconds(200)); // optional retry delay
+                    continue;
+                }
+            }
+
+            messagePrinted = false;
+
+            if (!frame_full.empty()) {
+                // Ensure render buffer
+                if (frame_full_render.size() != frame_full.size() || frame_full_render.type() != frame_full.type())
+                    frame_full_render.create(frame_full.size(), frame_full.type());
                 frame_full.copyTo(frame_full_render);
+
+                // Frame ID handling
                 frame_id = -1;
                 std::smatch match;
                 std::regex re("(\\d+)");
                 if (std::regex_search(cam.CurrentFileName, match, re)) {
-                    try {
-                        frame_id = std::stoi(match.str(1));
-                    } catch (...) {
-                        frame_id = 0;
-                    }
+                    try { frame_id = std::stoi(match.str(1)); } catch (...) { frame_id = 0; }
                 } else {
                     static int static_frame_counter = 0;
                     frame_id = static_frame_counter++;
                 }
+
+                // Resize window if frame size changes
                 if (frame_full_render.cols != prev_cols || frame_full_render.rows != prev_rows) {
                     cv::resizeWindow("ALPR stream", frame_full_render.cols, frame_full_render.rows);
-                    prev_cols = frame_full_render.cols;
-                    prev_rows = frame_full_render.rows;
+                    prev_cols = frame_full_render.cols; prev_rows = frame_full_render.rows;
                 }
 
+                // Optional save full input
                 if (Js.FoI_Folder != "none") {
-                    cv::imwrite(Js.FoI_Folder + "/" + cam.CurrentFileName + "_utc.png", frame_full);
+                    try { cv::imwrite(Js.FoI_Folder + "/" + cam.CurrentFileName + "_utc.png", frame_full); } catch(...) {}
                 }
 
+                // Crop region of interest
                 CropMat(frame_full, frame);
                 cv::rectangle(frame_full_render, Js.RoiCrop, cv::Scalar(128, 128, 128), 2);
 
+                // --- Detection ---
                 vector<bbox_t> result_car = CarNet.detect(frame, Js.ThresCar);
-                Wd = frame.cols;
-                Ht = frame.rows;
+                Wd = frame.cols; Ht = frame.rows;
                 ChrCar = 'a';
 
                 for (size_t vehicle_idx = 0; vehicle_idx < result_car.size(); vehicle_idx++) {
                     auto& i = result_car[vehicle_idx];
-
                     if ((100 * i.w > 95 * Wd) || (100 * i.h > 95 * Ht)) continue;
                     if ((i.w > 40) && (i.h > 40) && ((i.x + i.w) < Wd) && ((i.y + i.h) < Ht)) {
                         cv::Rect roi(i.x, i.y, i.w, i.h);
@@ -380,20 +410,19 @@ int main(int argc, char** argv) {
                         draw_vehicle(frame_full_render, i);
 
                         if (Js.Car_Folder != "none") {
-                            cv::imwrite(Js.Car_Folder + "/" + cam.CurrentFileName + "_" + ChrCar + "_utc.png", frame_car);
+                            try { cv::imwrite(Js.Car_Folder + "/" + cam.CurrentFileName + "_" + ChrCar + "_utc.png", frame_car); } catch(...) {}
                             ChrCar++;
                         }
 
+                        // License plate detection
                         vector<bbox_t> result_plate = PlateNet.detect(frame_car, Js.ThresPlate);
-                        WdC = frame_car.cols;
-                        HtC = frame_car.rows;
+                        WdC = frame_car.cols; HtC = frame_car.rows;
                         ChrPlate = '1';
 
-                        std::string final_plate_text;
+                        std::string final_plate_text = "-";
 
                         if (!result_plate.empty()) {
                             auto& j = result_plate[0];
-
                             if ((j.w > 20) && (j.h > 10) && ((j.x + 2 + j.w) < WdC) && ((j.y + 2 + j.h) < HtC)) {
                                 cv::Rect roi_plate(j.x, j.y, j.w + 2, j.h + 2);
                                 cv::Mat frame_plate = frame_car(roi_plate);
@@ -401,15 +430,12 @@ int main(int argc, char** argv) {
                                 draw_plate(frame_full_render, i, j);
 
                                 if (Js.Plate_Folder != "none") {
-                                    cv::imwrite(Js.Plate_Folder + "/" + cam.CurrentFileName + "_" + ChrCar + "_" + ChrPlate + "_utc.png", frame_plate);
+                                    try { cv::imwrite(Js.Plate_Folder + "/" + cam.CurrentFileName + "_" + ChrCar + "_" + ChrPlate + "_utc.png", frame_plate); } catch(...) {}
                                     ChrPlate++;
                                 }
 
                                 result_ocr = OcrNet.detect(frame_plate, Js.ThresOCR);
-
-                                if (Js.HeuristicsOn) {
-                                    SortPlate(result_ocr);
-                                }
+                                if (Js.HeuristicsOn) SortPlate(result_ocr);
 
                                 final_plate_text.clear();
                                 for (const auto& ch : result_ocr) {
@@ -421,35 +447,29 @@ int main(int argc, char** argv) {
                                     final_plate_text += OcrNames[ch.obj_id];
                                 }
 
-                                if (Js.PrintOnCli) {
-                                    print_result(result_ocr, OcrNames);
-                                }
-
                                 draw_ocr(frame_full_render, i, j, result_ocr, OcrNames);
                             }
-                        } else {
-                            final_plate_text = "-";
                         }
 
+                        // Log CSV
                         ocr_log_file << cam.CurrentFileName << "," << i.obj_id << "," << final_plate_text << "\n";
                         ocr_log_file.flush();
-
                         std::cout << "[CSV] " << cam.CurrentFileName << "," << i.obj_id << "," << final_plate_text << std::endl;
                     }
                 }
 
+                // --- Save rendered ---
                 if (Js.Render_Folder != "none") {
-                    cv::imwrite(Js.Render_Folder + "/" + cam.CurrentFileName + "_utc.png", frame_full_render);
+                    try { cv::imwrite(Js.Render_Folder + "/" + cam.CurrentFileName + "_utc.png", frame_full_render); } catch(...) {}
                 }
 
+                // --- Send JSON + MJPEG ---
                 std::string json_name = cam.CurrentFileName + "_" + ChrCar + "_" + ChrPlate + "_" + std::to_string(frame_id) + "_utc.json";
                 send_json_http(result_car, CarNames, std::to_string(frame_id), json_name);
 
                 cv::Mat frame_resize;
                 cv::resize(frame_full_render, frame_resize, cv::Size(Js.MJPEG_Width, Js.MJPEG_Height));
-                if (Js.MJPEG_Port > 0) {
-                    send_mjpeg(frame_resize, Js.MJPEG_Port, 4000000, 90);
-                }
+                if (Js.MJPEG_Port > 0) send_mjpeg(frame_resize, Js.MJPEG_Port, 4000000, 90);
 
                 std::cout << "CurrentFileName : " << cam.CurrentFileName << std::endl;
 
@@ -467,7 +487,6 @@ int main(int argc, char** argv) {
         }
     }
 
-    ocr_log_file.close();
     return 0;
 }
 //----------------------------------------------------------------------------------------
