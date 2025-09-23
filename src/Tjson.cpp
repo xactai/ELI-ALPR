@@ -78,6 +78,8 @@ bool Tjson::GetSettings(void)
         if(!GetSetting(j["RoI"],"width",RoiCrop.width))    return Success;
         if(!GetSetting(j["RoI"],"height",RoiCrop.height))  return Success;
 
+        if(!GetSetting(j,"LOOP",Loop))            return Success;
+
         //so far, so good
         Success=true;
     }

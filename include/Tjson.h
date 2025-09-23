@@ -56,6 +56,7 @@ public:
     int MJPEG_Height;         //output image height 8090 stream
     cv::Rect RoiCrop;         //cropped roi (width==0 and/or height==0 no cropping)
 
+    bool Loop;                //true- loop video file and folder inputs
 private:
     json j;
     bool Jvalid;
