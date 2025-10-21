@@ -1,26 +1,27 @@
 {
   "VERSION": "1.0.0",
-  "VIDEO_INPUT": "video",
+  "VIDEO_INPUT": "CCTV",
   "VIDEO_INPUTS_PARAMS": {
     "image-1": "/home/shakespeare/Pictures/academic-sample-image.jpg",
     "image-2": "/home/shakespeare/Pictures/Academic+NovotelOUT-Images/Novotel_parking_image_1.jpeg", 
     "folder": "/home/shakespeare/Pictures/Academic+NovotelOUT-Images",
     "video": "/home/shakespeare/Videos/Novotel_3mins_Video_with_framenumber_H264.mp4",
     "usbcam": "v4l2src device=/dev/video0 ! video/x-raw, framerate=30/1, width=640, height=360 ! videoconvert ! appsink",
-    "CCTV": "rtsp://octopix-staging.xactai.com:8566/app/obsbot"
+    "CCTV": "rtsp://admin:123456@192.168.20.222:554/stream1",
+    "CCTV-Mobile": "rtsp://octopix-staging.xactai.com:8566/app/cam1"
   },
 
   "RoI": {
     "x_offset": 0,
     "y_offset": 0,
-    "width": 1920,
-    "height": 1080
+    "width": 3280,
+    "height": 3280
   },
 
    "LOOP": true,
 
-  "MJPEG_PORT": 3090,
-  "JSON_PORT": 3070,
+  "MJPEG_PORT": 1090,
+  "JSON_PORT": 1070,
   "MJPEG_WIDTH": 1920,
   "MJPEG_HEIGHT": 1080,
 

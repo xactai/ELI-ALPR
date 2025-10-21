@@ -104,7 +104,7 @@ void RTSPcam::ProcessOpen()
         FrameTime = Elapse / COUNT;
     }
     fpsPrintTime = chrono::steady_clock::now();
-    cout << "FPS (reported/estimated): " << FPS << endl;
+   // cout << "FPS (reported/estimated): " << FPS << endl;
 }
 
 void RTSPcam::Rewind()
