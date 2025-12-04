@@ -189,11 +189,17 @@ bool RTSPcam::GetLatestFrame(cv::Mat& frame)
             }
         }
 
-        if (!Success) { // loop folder
-            rewinddir(dir);
-            return GetLatestFrame(frame);
-        }
-        return Success;
+        if (!Success) {
+    // Folder finished
+    if (Loop) {
+        rewinddir(dir);
+        return GetLatestFrame(frame);   // only loop when Loop=true
+    } else {
+        return false;   // STOP reading → main.cpp will break
+    }
+}
+return Success;
+
     }
 
     // --- Video / RTSP ---

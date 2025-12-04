@@ -1,36 +1,35 @@
 {
   "VERSION": "1.0.0",
-  "VIDEO_INPUT": "CCTV",
+  "VIDEO_INPUT": "video",
   "VIDEO_INPUTS_PARAMS": {
     "image-1": "/home/shakespeare/Pictures/academic-sample-image.jpg",
-    "image-2": "/home/shakespeare/Pictures/Academic+NovotelOUT-Images/Novotel_parking_image_1.jpeg", 
-    "folder": "/home/shakespeare/Pictures/Academic+NovotelOUT-Images",
+    "image-2": "/home/shakespeare/Pictures/Academic+NovotelOUT-Images/Novotel_parking_image_1.jpeg",
+    "folder": "/home/shakespeare/Pictures/All_images",
     "video": "/home/shakespeare/Videos/Novotel_3mins_Video_with_framenumber_H264.mp4",
-    "usbcam": "v4l2src device=/dev/video0 ! video/x-raw, framerate=30/1, width=640, height=360 ! videoconvert ! appsink",
-    "CCTV": "rtsp://admin:123456@192.168.20.222:554/stream1",
+    "usbcam": "v4l2src device=/dev/video0 ! image/jpeg, width=1280, height=720, framerate=30/1 ! jpegdec ! videoconvert ! appsink",
+    "CCTV": "rtsp://admin:123456@192.168.20.223:554/stream1",
     "CCTV-Mobile": "rtsp://octopix-staging.xactai.com:8566/app/cam1"
   },
 
   "RoI": {
     "x_offset": 0,
-    "y_offset": 0,
-    "width": 3280,
-    "height": 3280
+    "y_offset":0,
+    "width": 1920,
+    "height": 1080
   },
 
-   "LOOP": true,
+  "LOOP": true,
 
   "MJPEG_PORT": 1090,
   "JSON_PORT": 1070,
-  "MJPEG_WIDTH": 1920,
-  "MJPEG_HEIGHT": 1080,
+  "MJPEG_WIDTH": 960,
+  "MJPEG_HEIGHT": 540,
 
   "VEHICLE_MODEL": "./models/yolov4-tiny",
   "LICENSE_MODEL": "./models/lp-detection-layout-classification",
   "OCR_MODEL": "./models/lp-recognition",
 
   "HEURISTIC_ON": true,
-  
   "PRINT_ON_CLI": true,
   "PRINT_ON_RENDER": false,
 
@@ -40,7 +39,7 @@
   "JSONS_FOLDER": "none",
   "RENDERS_FOLDER": "none",
 
-  "THRESHOLD_VEHICLE": 0.5,
+  "THRESHOLD_VEHICLE": 0.25,
   "THRESHOLD_PLATE": 0.5,
   "THRESHOLD_OCR": 0.5
 }

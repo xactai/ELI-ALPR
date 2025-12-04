@@ -27,13 +27,35 @@ using namespace std;
 Tjson Js;
 
 //----------------------------------------------------------------------------------------
-void draw_vehicle(cv::Mat& bgr, bbox_t& v)
-{
-    //Create the rectangle
-    cv::Rect roi(v.x+Js.RoiCrop.x, v.y+Js.RoiCrop.y, v.w, v.h);
-    if(v.obj_id == 0) cv::rectangle(bgr, roi, cv::Scalar(255, 255,   0),2); //cyan - car
-    else              cv::rectangle(bgr, roi, cv::Scalar(255,   0, 255),2); //magenta - motorcycle
+// void draw_vehicle(cv::Mat& bgr, bbox_t& v)
+// {
+//     //Create the rectangle
+//     cv::Rect roi(v.x+Js.RoiCrop.x, v.y+Js.RoiCrop.y, v.w, v.h);
+//     if(v.obj_id == 0) cv::rectangle(bgr, roi, cv::Scalar(255, 255,   0),2); //cyan - car
+//     else              cv::rectangle(bgr, roi, cv::Scalar(255,   0, 255),2); //magenta - motorcycle
+// }
+
+void draw_vehicle(cv::Mat& bgr, bbox_t& v) {
+    // Create the rectangle for the detected object
+    cv::Rect roi(v.x + Js.RoiCrop.x, v.y + Js.RoiCrop.y, v.w, v.h);
+
+    // Assign colors based on object class ID
+    switch (v.obj_id) {
+        case 0: // car
+            cv::rectangle(bgr, roi, cv::Scalar(255, 255, 0), 2); // cyan
+            break;
+        case 1: // motorcycle
+            cv::rectangle(bgr, roi, cv::Scalar(255, 0, 255), 2); // magenta
+            break;
+        case 2: // person
+            cv::rectangle(bgr, roi, cv::Scalar(0, 255, 255), 2); // yellow
+            break;
+        case 3: // bicycle
+            cv::rectangle(bgr, roi, cv::Scalar(255, 0, 255), 2); // magenta
+            break;
+    }
 }
+
 //----------------------------------------------------------------------------------------
 void draw_plate(cv::Mat& bgr, bbox_t& v, bbox_t& p)
 {
@@ -295,7 +317,7 @@ int main(int argc, char** argv) {
         return -1;
     }
 
-    std::cout << "ALPR Version : " << Js.Version << std::endl;
+    std::cout << "ELI-ALPR Version : " << Js.Version << std::endl;
     Js.MakeFolders();
 
     // --- CSV overwrite mode ---
@@ -320,46 +342,50 @@ int main(int argc, char** argv) {
     cv::namedWindow("ELI-ALPR stream", cv::WINDOW_NORMAL);
 
     // --- Main Loop ---
-    while (true) {
+         while (true) {
         try {
             // Get frame (auto-reconnect for RTSP)
-            if (!cam.GetLatestFrame(frame_full)) {
-                if (!messagePrinted) {
-                    std::cout << "[ALPR] Input stream is closed or failed." << std::endl;
-                    messagePrinted = true;
-                }
+           // Get frame (auto-reconnect for RTSP / handle video / folder / picture)
+        if (!cam.GetLatestFrame(frame_full)) {
 
-                // --- Video handling ---
-                if (cam.UseVideo) {
-                    if (cam.Loop) {
-                        std::cout << "[ALPR] Video ended, looping..." << std::endl;
-                        cam.Rewind();
-                        messagePrinted = false;
-                        continue;
-                    } else {
-                        std::cout << "[ALPR] Video ended, stopping." << std::endl;
-                        break;
-                    }
-                }
+    // --- Video file handling ---
+         if (cam.UseVideo) {
+        if (cam.Loop) {
+            std::cout << "[ELI-ALPR] Video ended, looping..." << std::endl;
+            cam.Rewind();
+            messagePrinted = false;
+            continue;
+        } else {
+            std::cout << "[ELI-ALPR] Video ended, stopping." << std::endl;
+            break;
+        }
+    }
 
-                // --- Picture / folder handling ---
-                if (cam.UsePicture || cam.UseFolder) {
-                    if (!cam.Loop) {
-                        std::cout << "[ALPR] Loop disabled, stopping." << std::endl;
-                        break;
-                    }
-                    messagePrinted = false;
-                    continue;
-                }
+    // --- Picture / folder handling ---
+     if (cam.UseFolder) {
+    if (!cam.Loop) {
+        std::cout << "[ELI-ALPR] Folder input finished. Stopping." << std::endl;
+        break;   // <-- STOP CORRECTLY
+    } else {
+        cam.Rewind();   // <-- If Loop = true
+        continue;
+    }
+}
 
-                // --- Only RTSP reconnects ---
-                if (cam.UseRTSP) {
-                    std::cout << "[ALPR] Attempting to reconnect..." << std::endl;
-                    cam.Reconnect();
-                    std::this_thread::sleep_for(std::chrono::milliseconds(200)); // optional retry delay
-                    continue;
-                }
-            }
+
+    // --- RTSP handling: try to reconnect ---
+        if (cam.UseRTSP) {
+        std::cout << "[ELI-ALPR] Input stream is closed or failed. Attempting to reconnect..." << std::endl;
+        cam.Reconnect();
+        std::this_thread::sleep_for(std::chrono::milliseconds(200)); // optional retry delay
+        continue;
+    }
+
+    // --- Fallback for any other case ---
+    std::cout << "[ELI-ALPR] Input stream is closed or failed." << std::endl;
+    break;
+}
+
 
             messagePrinted = false;
 
@@ -368,6 +394,8 @@ int main(int argc, char** argv) {
                 if (frame_full_render.size() != frame_full.size() || frame_full_render.type() != frame_full.type())
                     frame_full_render.create(frame_full.size(), frame_full.type());
                 frame_full.copyTo(frame_full_render);
+                Js.RoiCrop = cv::Rect(0, 0, frame_full.cols, frame_full.rows);
+
 
                 // Frame ID handling
                 frame_id = -1;
@@ -382,7 +410,7 @@ int main(int argc, char** argv) {
 
                 // Resize window if frame size changes
                 if (frame_full_render.cols != prev_cols || frame_full_render.rows != prev_rows) {
-                    cv::resizeWindow("ALPR stream", frame_full_render.cols, frame_full_render.rows);
+                    cv::resizeWindow("ELI-ALPR stream", frame_full_render.cols, frame_full_render.rows);
                     prev_cols = frame_full_render.cols; prev_rows = frame_full_render.rows;
                 }
 
@@ -474,17 +502,19 @@ int main(int argc, char** argv) {
                 std::cout << "CurrentFileName : " << cam.CurrentFileName << std::endl;
 
                 if (Js.PrintOnRender) {
-                    cv::imshow("ALPR stream", frame_full_render);
+                    cv::imshow("ELI-ALPR stream", frame_full_render);
                     char esc = cam.UsePicture ? cv::waitKey() : cv::waitKey(5);
                     if (esc == 27) break;
                 }
             }
 
         } catch (std::exception& e) {
-            std::cerr << "Exception: " << e.what() << "\n"; getchar();
-        } catch (...) {
-            std::cerr << "Unknown exception\n"; getchar();
-        }
+    std::cerr << "Exception: " << e.what() << "\n";
+}
+catch (...) {
+    std::cerr << "Unknown exception\n";
+}
+
     }
 
     return 0;
