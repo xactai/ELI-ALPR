@@ -1,6 +1,6 @@
 {
   "VERSION": "1.0.0",
-  "VIDEO_INPUT": "video",
+  "VIDEO_INPUT": "CCTV",
   "VIDEO_INPUTS_PARAMS": {
     "image-1": "/home/shakespeare/Pictures/academic-sample-image.jpg",
     "image-2": "/home/shakespeare/Pictures/Academic+NovotelOUT-Images/Novotel_parking_image_1.jpeg",
